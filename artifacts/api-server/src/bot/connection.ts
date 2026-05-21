@@ -59,6 +59,8 @@ export function isOwnerPhone(phone: string): boolean {
 export const PREFIX = ".";
 
 let sock: WASocket | null = null;
+let overrideSock: WASocket | null = null; // set by bot-manager when a managed bot is active
+let overrideConnected = false;
 let isConnected = false;
 let isConnecting = false;
 let pairingCode: string | null = null;
@@ -69,6 +71,18 @@ const MAX_RECONNECT_DELAY = 30000;
 const STABLE_CONNECTION_MS = 30000;
 const replyContext = new AsyncLocalStorage<any>();
 
+/** Called by bot-manager when a managed bot connects/disconnects. */
+export function setActiveSock(s: WASocket | null, connected = false): void {
+  overrideSock = s;
+  overrideConnected = connected;
+}
+
+function getActiveSock(): WASocket {
+  const active = overrideSock || sock;
+  if (!active) throw new Error("Socket not initialized");
+  return active;
+}
+
 type ConnectOptions = {
   promptForPhone?: boolean;
 };
@@ -78,7 +92,7 @@ export function getSocket(): WASocket | null {
 }
 
 export function isSocketConnected(): boolean {
-  return isConnected;
+  return overrideConnected || isConnected;
 }
 
 export function isSocketConnecting(): boolean {
@@ -317,26 +331,23 @@ async function sendWithRetry(fn: () => Promise<any>, retries = 4): Promise<any> 
 }
 
 export async function sendMessage(jid: string, content: any, options?: any) {
-  if (!sock) throw new Error("Socket not initialized");
-  const s = sock;
+  const s = getActiveSock();
   return sendWithRetry(() => s.sendMessage(jid, content, withReplyOptions(options)));
 }
 
 export async function sendText(jid: string, text: string, mentions?: string[]) {
-  if (!sock) throw new Error("Socket not initialized");
-  const s = sock;
+  const s = getActiveSock();
   return sendWithRetry(() => s.sendMessage(jid, { text, mentions: mentions || [] }, withReplyOptions()));
 }
 
 export async function sendImage(jid: string, imageBuffer: Buffer, caption?: string) {
-  if (!sock) throw new Error("Socket not initialized");
-  const s = sock;
+  const s = getActiveSock();
   return sendWithRetry(() => s.sendMessage(jid, { image: imageBuffer, caption: caption || "" }, withReplyOptions()));
 }
 
 export async function sendReact(jid: string, msgKey: any, emoji: string) {
-  if (!sock) throw new Error("Socket not initialized");
-  return sock.sendMessage(jid, { react: { text: emoji, key: msgKey } });
+  const s = getActiveSock();
+  return s.sendMessage(jid, { react: { text: emoji, key: msgKey } });
 }
 
 function getMessageTimestampMs(msg: any): number {

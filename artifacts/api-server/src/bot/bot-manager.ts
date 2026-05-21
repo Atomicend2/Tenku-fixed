@@ -7,6 +7,7 @@ import {
 } from "@whiskeysockets/baileys";
 import { getDb } from "./db/database.js";
 import { logger } from "../lib/logger.js";
+import { setActiveSock } from "./connection.js";
 import { handleMessage } from "./handlers/message.js";
 import fs from "fs";
 import Pino from "pino";
@@ -89,6 +90,8 @@ export async function startBot(botId: string): Promise<void> {
       const phone = sock.user?.id?.split("@")[0]?.split(":")[0] || row.phone;
       db.prepare("UPDATE bots SET status = 'connected', phone = ? WHERE id = ?").run(phone, botId);
       logger.info({ botId, name: row.name }, "Managed bot connected");
+      // Make this bot the active socket so all sendText/sendImage/sendMessage calls route through it
+      setActiveSock(sock, true);
     }
 
     if (update.connection === "close") {
@@ -96,6 +99,8 @@ export async function startBot(botId: string): Promise<void> {
       inst.status = "disconnected";
       db.prepare("UPDATE bots SET status = 'disconnected' WHERE id = ?").run(botId);
       logger.info({ botId, code }, "Managed bot disconnected");
+      // Clear the active sock override so we don't try to send through a dead socket
+      setActiveSock(null, false);
       if (code !== DisconnectReason.loggedOut) {
         setTimeout(() => startBot(botId).catch(() => {}), 8000);
       } else {
