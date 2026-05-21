@@ -329,12 +329,6 @@ function AdminDashboard({ token, base, onLogout, toast }: {
             {data?.botConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
             {data?.botConnected ? "Bot Online" : "Bot Offline"}
           </div>
-          {!data?.botConnected && data?.pairingCode && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30">
-              <span className="text-amber-400 text-xs font-bold uppercase tracking-widest">Pair:</span>
-              <span className="font-mono text-amber-300 text-sm font-bold tracking-[0.3em]">{data.pairingCode}</span>
-            </div>
-          )}
           <button onClick={fetchData} className="px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary/20 transition-colors flex items-center gap-1.5">
             <RefreshCw className="w-3 h-3" /> Refresh
           </button>

@@ -11,8 +11,6 @@ import {
 import { Boom } from "@hapi/boom";
 import path from "path";
 import fs from "fs";
-import readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { logger } from "../lib/logger.js";
 import { handleMessage } from "./handlers/message.js";
@@ -142,15 +140,6 @@ function getRememberedPairingPhoneNumber(): string | undefined {
   }
 }
 
-async function askForPairingPhoneNumber(): Promise<string | undefined> {
-  const rl = readline.createInterface({ input, output });
-  try {
-    const answer = await rl.question("Enter WhatsApp phone number to pair with country code, or press Enter to skip: ");
-    return normalizePhoneNumber(answer);
-  } finally {
-    rl.close();
-  }
-}
 
 export async function connectToWhatsApp(phoneNumber?: string, options: ConnectOptions = {}): Promise<WASocket> {
   if (sock && (isConnected || isConnecting)) {
@@ -194,25 +183,7 @@ export async function connectToWhatsApp(phoneNumber?: string, options: ConnectOp
   });
 
   if (!state.creds.registered) {
-    const normalizedPhoneNumber =
-      rememberPairingPhoneNumber(phoneNumber) ||
-      getRememberedPairingPhoneNumber() ||
-      (options.promptForPhone === false ? undefined : await askForPairingPhoneNumber());
-
-    if (!normalizedPhoneNumber) {
-      logger.warn("No phone number provided; skipping pairing code request");
-    } else {
-      rememberPairingPhoneNumber(normalizedPhoneNumber);
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      try {
-        const code = await sock.requestPairingCode(normalizedPhoneNumber);
-        pairingCode = code;
-        logger.info({ code }, "Pairing code generated");
-        console.log(`WhatsApp pairing code: ${code}`);
-      } catch (err) {
-        logger.error({ err }, "Failed to request pairing code");
-      }
-    }
+    logger.info("Bot not registered — pair via Admin Panel > Bot Manager");
   }
 
   sock.ev.on("creds.update", saveCreds);
@@ -244,21 +215,18 @@ export async function connectToWhatsApp(phoneNumber?: string, options: ConnectOp
           logger.info("Shutting down — skipping auth wipe");
           return;
         }
-        logger.info("Logged out from WhatsApp — clearing auth and re-pairing");
+        logger.info("Logged out from WhatsApp — clearing auth");
         pairingCode = null;
-        // Wipe only the auth credentials, preserve paired-phone.txt (it's outside AUTH_DIR now)
+        // Wipe only the auth credentials
         fs.rmSync(AUTH_DIR, { recursive: true, force: true });
         fs.mkdirSync(AUTH_DIR, { recursive: true });
-        // Auto-reconnect: re-request pairing code using the saved phone number
-        const savedPhone = getRememberedPairingPhoneNumber();
-        if (savedPhone) {
-          setTimeout(() => {
-            if (generation === connectionGeneration) {
-              logger.info({ savedPhone }, "Auto-reconnecting with saved phone number after logout");
-              connectToWhatsApp(savedPhone, { promptForPhone: false });
-            }
-          }, 3000);
-        }
+        // Auto-reconnect — re-pair manually via Admin Panel > Bot Manager
+        setTimeout(() => {
+          if (generation === connectionGeneration) {
+            logger.info("Auto-reconnecting after logout (no phone — pair via Bot Manager)");
+            connectToWhatsApp();
+          }
+        }, 3000);
       }
     } else if (connection === "open") {
       if (generation !== connectionGeneration) return;
