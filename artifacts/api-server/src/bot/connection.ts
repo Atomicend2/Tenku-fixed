@@ -13,14 +13,12 @@ import path from "path";
 import fs from "fs";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { fileURLToPath } from "url";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { logger } from "../lib/logger.js";
 import { handleMessage } from "./handlers/message.js";
 import { handleGroupUpdate, handleGroupParticipantsUpdate } from "./handlers/group.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, "../../..", "data");
+const DATA_DIR = path.join(process.cwd(), "data");
 const AUTH_DIR = path.join(DATA_DIR, "auth");
 // Store pairing number outside AUTH_DIR so it survives a logout/wipe
 const PAIRING_PHONE_PATH = path.join(DATA_DIR, "paired-phone.txt");

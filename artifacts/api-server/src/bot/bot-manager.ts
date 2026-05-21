@@ -62,6 +62,10 @@ export async function startBot(botId: string): Promise<void> {
   live.set(botId, inst);
   db.prepare("UPDATE bots SET status = 'connecting' WHERE id = ?").run(botId);
 
+  // Prevent uncaught "error" events from crashing the process
+  sock.ws?.on?.("error", (err: any) => {
+    logger.warn({ err, botId }, "Managed bot socket error (handled)");
+  });
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("connection.update", async (update: any) => {
