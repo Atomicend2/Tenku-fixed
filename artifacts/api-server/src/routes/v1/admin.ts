@@ -6,8 +6,36 @@ import { getSocket, isSocketConnected } from "../../bot/connection.js";
 import {
   startBot, stopBot, getAllBotsStatus, getBotStatusInfo, setPrimaryBot,
 } from "../../bot/bot-manager.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const router = Router();
+
+// Setup multer for image uploads
+const uploadDir = path.join(process.cwd(), "data", "uploads", "menu-images");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: uploadDir,
+    filename: (req, file, cb) => {
+      const botId = (req.params as any).id || "default";
+      cb(null, `menu-${botId}-${Date.now()}${path.extname(file.originalname)}`);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|gif)$/i;
+    if (allowed.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+});
 
 const ADMIN_PASSWORD = "Flowers";
 const BOT_OWNER = (process.env["BOT_OWNER_LID"] || "2348144550593").replace(/\D/g, "");
@@ -51,7 +79,7 @@ function requireAdminAccess(req: Request, res: Response, next: NextFunction): vo
   });
 }
 
-// ─── Auth ──────────────────────────────────────────────────────────────────
+// ─── Auth ───────────────────────────────────────────────────────────
 
 router.post("/login", (req, res) => {
   const { password } = req.body as { password?: string };
@@ -67,7 +95,7 @@ router.post("/login", (req, res) => {
   res.json({ success: true, token });
 });
 
-// ─── Stats ─────────────────────────────────────────────────────────────────
+// ─── Stats ───────────────────────────────────────────────────────────
 
 router.get("/stats", requireAdminAccess as any, (req: AuthRequest, res) => {
   const db = getDb();
@@ -111,7 +139,7 @@ router.get("/stats", requireAdminAccess as any, (req: AuthRequest, res) => {
   });
 });
 
-// ─── Player Search ──────────────────────────────────────────────────────────
+// ─── Player Search ────────────────────────────────────────────────────────
 
 router.get("/players", requireAdminAccess as any, (req, res) => {
   const { q } = req.query as { q?: string };
@@ -218,7 +246,7 @@ router.post("/players/:id/clear-cooldowns", requireAdminAccess as any, (req, res
   res.json({ success: true, message: "Cooldowns cleared." });
 });
 
-// ─── Legacy Actions ─────────────────────────────────────────────────────────
+// ─── Legacy Actions ───────────────────────────────────────────────────────
 
 router.post("/reset-balance", requireAdminAccess as any, (req: AuthRequest, res) => {
   if (!(req as any).isAdminSession && !isOwner(req)) {
@@ -249,7 +277,7 @@ router.post("/unban", requireAdminAccess as any, (req: AuthRequest, res) => {
   res.json({ success: true, message: `${normalized} unbanned.` });
 });
 
-// ─── Bot Management ─────────────────────────────────────────────────────────
+// ─── Bot Management ───────────────────────────────────────────────────────
 
 router.get("/bots", requireAdminAccess as any, (_req, res) => {
   res.json({ success: true, bots: getAllBotsStatus() });
@@ -320,6 +348,70 @@ router.post("/bots/:id/roles", requireAdminAccess as any, (req, res) => {
   const db = getDb();
   db.prepare("UPDATE bots SET roles = ? WHERE id = ?").run(JSON.stringify(roles), id);
   res.json({ success: true, message: "Roles updated." });
+});
+
+// ─── Menu Image Upload ───────────────────────────────────────────────────────
+
+router.post("/bots/:id/menu-image", requireAdminAccess as any, upload.single("image"), (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ success: false, message: "No image provided." });
+    return;
+  }
+
+  const db = getDb();
+  const botId = req.params.id;
+  const imagePath = req.file.path;
+
+  try {
+    db.prepare("UPDATE bots SET menu_image_url = ? WHERE id = ?").run(imagePath, botId);
+    res.json({ success: true, message: "Menu image uploaded successfully.", imagePath });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/bots/:id/menu-image", requireAdminAccess as any, (req, res) => {
+  const db = getDb();
+  const botId = req.params.id;
+  const bot = db.prepare("SELECT menu_image_url FROM bots WHERE id = ?").get(botId) as any;
+
+  if (!bot || !bot.menu_image_url || !fs.existsSync(bot.menu_image_url)) {
+    res.status(404).json({ success: false, message: "Menu image not found." });
+    return;
+  }
+
+  res.sendFile(bot.menu_image_url);
+});
+
+// ─── Database Cleanup ───────────────────────────────────────────────────────
+
+router.post("/clear-player-data", requireAdminAccess as any, (req: AuthRequest, res) => {
+  if (!(req as any).isAdminSession && !isOwner(req)) {
+    res.status(403).json({ success: false, message: "Owner only." });
+    return;
+  }
+
+  const db = getDb();
+  try {
+    // Clear all user economy data while keeping structure
+    db.prepare("DELETE FROM users WHERE COALESCE(is_bot, 0) = 0").run();
+    db.prepare("DELETE FROM inventory").run();
+    db.prepare("DELETE FROM user_cards").run();
+    db.prepare("DELETE FROM card_deck").run();
+    db.prepare("DELETE FROM rpg_characters").run();
+    db.prepare("DELETE FROM auctions").run();
+    db.prepare("DELETE FROM card_spawns").run();
+    db.prepare("DELETE FROM trade_offers").run();
+    db.prepare("DELETE FROM sell_offers").run();
+    db.prepare("DELETE FROM guild_members").run();
+    db.prepare("DELETE FROM warnings").run();
+    db.prepare("DELETE FROM afk_users").run();
+    db.prepare("DELETE FROM summer_tokens").run();
+    
+    res.json({ success: true, message: "All player data cleared successfully." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 export { router as adminRouter };
