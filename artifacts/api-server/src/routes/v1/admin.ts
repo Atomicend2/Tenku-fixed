@@ -190,15 +190,15 @@ router.post("/players/:id/ban", requireAdminAccess as any, (req, res) => {
   const db = getDb();
   const id = decodeURIComponent(req.params.id);
   const { reason } = req.body as { reason?: string };
-  db.prepare("INSERT OR REPLACE INTO banned_entities (id, type, reason, banned_by, banned_at) VALUES (?, 'user', ?, ?, unixepoch())")
-    .run(id, reason || "Admin ban", (req as any).user?.id || "admin");
+  db.prepare("INSERT OR REPLACE INTO banned_entities (type, target, display, reason, added_by) VALUES ('user', ?, ?, ?, ?)")
+    .run(id, id, reason || "Admin ban", (req as any).user?.id || "admin");
   res.json({ success: true, message: "Player banned." });
 });
 
 router.post("/players/:id/unban", requireAdminAccess as any, (req, res) => {
   const db = getDb();
   const id = decodeURIComponent(req.params.id);
-  db.prepare("DELETE FROM banned_entities WHERE id = ? AND type = 'user'").run(id);
+  db.prepare("DELETE FROM banned_entities WHERE type = 'user' AND target = ?").run(id);
   res.json({ success: true, message: "Player unbanned." });
 });
 
@@ -263,8 +263,8 @@ router.post("/ban", requireAdminAccess as any, (req: AuthRequest, res) => {
   if (!phone) { res.status(400).json({ success: false, message: "phone required" }); return; }
   const db = getDb();
   const normalized = phone.replace(/\D/g, "");
-  db.prepare("INSERT OR IGNORE INTO banned_entities (id, type, reason, banned_by, banned_at) VALUES (?, 'user', 'Admin ban', ?, unixepoch())")
-    .run(`${normalized}@s.whatsapp.net`, (req as AuthRequest).user?.id || "admin");
+  db.prepare("INSERT OR IGNORE INTO banned_entities (type, target, reason, added_by, added_at) VALUES ('user', ?, 'Admin ban', ?, unixepoch())")
+    .run(normalized, (req as AuthRequest).user?.id || "admin");
   res.json({ success: true, message: `${normalized} banned.` });
 });
 
@@ -273,7 +273,7 @@ router.post("/unban", requireAdminAccess as any, (req: AuthRequest, res) => {
   if (!phone) { res.status(400).json({ success: false, message: "phone required" }); return; }
   const db = getDb();
   const normalized = phone.replace(/\D/g, "");
-  db.prepare("DELETE FROM banned_entities WHERE id = ?").run(`${normalized}@s.whatsapp.net`);
+  db.prepare("DELETE FROM banned_entities WHERE type = 'user' AND target = ?").run(normalized);
   res.json({ success: true, message: `${normalized} unbanned.` });
 });
 

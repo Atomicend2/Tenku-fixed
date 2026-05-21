@@ -16,6 +16,7 @@ router.get("/", optionalAuth, (req, res) => {
     LEFT JOIN guild_members gm ON gm.user_id = u.id
     LEFT JOIN guilds g ON g.id = gm.guild_id
     WHERE COALESCE(u.is_bot, 0) = 0
+      AND COALESCE(u.registered, 0) = 1
     ORDER BY COALESCE(u.level, 1) DESC, COALESCE(u.xp, 0) DESC
     LIMIT ?
   `).all(limit) as any[];

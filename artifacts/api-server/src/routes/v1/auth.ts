@@ -43,11 +43,9 @@ function normalizePhone(raw: string): string | null {
 
 function getUserByPhone(phone: string) {
   const db = getDb();
-  const jid = `${phone}@s.whatsapp.net`;
-  const lidPattern = `${phone}`;
   const row = db.prepare(
-    "SELECT * FROM users WHERE id = ? OR id LIKE ? OR phone = ? LIMIT 1"
-  ).get(jid, `${lidPattern}%`, phone) as any;
+    "SELECT * FROM users WHERE id = ? OR phone = ? LIMIT 1"
+  ).get(phone, phone) as any;
   return row || null;
 }
 

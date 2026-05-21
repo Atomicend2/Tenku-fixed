@@ -41,6 +41,12 @@ export async function handleMessage(
 
   if (!sender) return;
 
+  // Skip bots entirely — fromMe (own bot messages) and DB-flagged bots
+  if (msg.key.fromMe) return;
+  const senderNormalized = sender.split("@")[0].split(":")[0];
+  const senderUserRecord = getUser(senderNormalized);
+  if (senderUserRecord?.is_bot === 1) return;
+
   if (isUserBanned(sender)) return;
   if (isGroup && isBanned("group", from)) {
     await sock.groupLeave(from).catch(() => {});

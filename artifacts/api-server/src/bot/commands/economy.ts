@@ -292,10 +292,10 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       await sendText(from, "✅ You're already registered!");
       return;
     }
-    // Extract clean phone number from sender JID for website login
-    const senderPhone = sender.split("@")[0].split(":")[0].replace(/\D/g, "");
-    updateUser(sender, { registered: 1, balance: (user.balance || 0) + 45000, phone: senderPhone });
-    await sendText(from, `✅ Welcome! You've been registered and received a $45,000 starter bonus!\n\nUse .p to see your profile.\nYou can also log into the website using your phone number: *${senderPhone}*`);
+    // user.id is already the phone number (normalized from JID)
+    const phone = user.id;
+    updateUser(sender, { registered: 1, balance: (user.balance || 0) + 45000, phone });
+    await sendText(from, `✅ Welcome! You've been registered and received a $45,000 starter bonus!\n\nUse .p to see your profile.\nYou can log into the website using your phone number: *${phone}*`);
     return;
   }
 

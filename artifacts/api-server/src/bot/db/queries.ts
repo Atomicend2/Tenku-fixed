@@ -1,30 +1,41 @@
 import { getDb } from "./database.js";
 
+export function normalizeUserId(id: string): string {
+  if (!id) return id;
+  if (id.includes("@")) {
+    return id.split("@")[0].split(":")[0];
+  }
+  return id;
+}
+
 export function getUser(userId: string) {
   const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as any;
+  const normalized = normalizeUserId(userId);
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(normalized) as any;
 }
 
 export function ensureUser(userId: string, name?: string) {
   const db = getDb();
-  const existing = getUser(userId);
+  const normalized = normalizeUserId(userId);
+  const existing = getUser(normalized);
   if (!existing) {
     db.prepare(
       "INSERT OR IGNORE INTO users (id, name, balance, bank) VALUES (?, ?, 0, 0)"
-    ).run(userId, name || userId);
+    ).run(normalized, name || normalized);
   }
-  return getUser(userId);
+  return getUser(normalized);
 }
 
 export function updateUser(userId: string, data: Record<string, any>) {
   const db = getDb();
-  ensureUser(userId);
+  const normalized = normalizeUserId(userId);
+  ensureUser(normalized);
   const keys = Object.keys(data);
   if (keys.length === 0) return;
   const set = keys.map((k) => `${k} = ?`).join(", ");
   db.prepare(`UPDATE users SET ${set}, updated_at = unixepoch() WHERE id = ?`).run(
     ...keys.map((k) => data[k]),
-    userId
+    normalized
   );
 }
 
@@ -411,12 +422,15 @@ export function addUserXp(userId: string, amount: number) {
 
 export function getUserRank(userId: string): number {
   const db = getDb();
-  const user = ensureUser(userId);
+  const normalized = normalizeUserId(userId);
+  const user = ensureUser(normalized);
   const score = Number(user.level || 1) * 100000 + Number(user.xp || 0);
   const row = db.prepare(`
     SELECT COUNT(*) + 1 as rank
     FROM users
     WHERE (COALESCE(level, 1) * 100000 + COALESCE(xp, 0)) > ?
+      AND COALESCE(is_bot, 0) = 0
+      AND COALESCE(registered, 0) = 1
   `).get(score) as any;
   return Number(row?.rank || 1);
 }
@@ -700,6 +714,7 @@ function getJidVariants(jid: string): string[] {
   const [rawUser, rawServer = "s.whatsapp.net"] = jid.split("@");
   const user = rawUser.split(":")[0].replace(/\D/g, "") || rawUser.split(":")[0];
   if (user) {
+    values.add(user); // bare phone number (used as primary ID)
     values.add(`${user}@${rawServer}`);
     values.add(`${user}@s.whatsapp.net`);
     values.add(`${user}@lid`);
