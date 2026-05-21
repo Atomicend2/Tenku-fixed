@@ -4,7 +4,7 @@ import { requireAuth, type AuthRequest } from "./middleware.js";
 import { getDb } from "../../bot/db/database.js";
 import { getSocket, isSocketConnected } from "../../bot/connection.js";
 import {
-  startBot, stopBot, getAllBotsStatus, getBotStatusInfo, setPrimaryBot,
+  startBot, stopBot, getAllBotsStatus, getBotStatusInfo, setPrimaryBot, requestBotPairingCode,
 } from "../../bot/bot-manager.js";
 import multer from "multer";
 import path from "path";
@@ -100,7 +100,7 @@ router.post("/login", (req, res) => {
 router.get("/stats", requireAdminAccess as any, async (req: AuthRequest, res) => {
   const db = getDb();
 
-  const totalUsers   = (db.prepare("SELECT COUNT(*) as c FROM users WHERE COALESCE(is_bot,0)=0").get() as any)?.c || 0;
+  const totalUsers   = (db.prepare("SELECT COUNT(*) as c FROM users WHERE COALESCE(is_bot,0)=0 AND COALESCE(registered,0)=1").get() as any)?.c || 0;
   const totalBots    = (db.prepare("SELECT COUNT(*) as c FROM users WHERE COALESCE(is_bot,0)=1").get() as any)?.c || 0;
   const totalCards   = (db.prepare("SELECT COUNT(*) as c FROM cards").get() as any)?.c || 0;
   const totalGuilds  = (db.prepare("SELECT COUNT(*) as c FROM guilds").get() as any)?.c || 0;
@@ -341,6 +341,17 @@ router.delete("/bots/:id", requireAdminAccess as any, async (req, res) => {
   const db = getDb();
   db.prepare("DELETE FROM bots WHERE id = ?").run(req.params.id);
   res.json({ success: true, message: "Bot removed." });
+});
+
+router.post("/bots/:id/request-pairing", requireAdminAccess as any, async (req, res) => {
+  const { phone } = req.body as { phone?: string };
+  if (!phone) { res.status(400).json({ success: false, message: "phone required" }); return; }
+  try {
+    const code = await requestBotPairingCode(req.params.id, phone);
+    res.json({ success: true, code, message: `Pairing code: ${code}` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 router.post("/bots/:id/roles", requireAdminAccess as any, (req, res) => {

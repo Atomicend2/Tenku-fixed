@@ -459,6 +459,7 @@ function initSchema(db: Database.Database): void {
   ensureColumn(db, "users", "lottery_tickets", "INTEGER DEFAULT 0");
   ensureColumn(db, "users", "lottery_tickets_bought_today", "INTEGER DEFAULT 0");
   ensureColumn(db, "users", "lottery_tickets_reset_date", "TEXT DEFAULT ''");
+  ensureColumn(db, "users", "registered_at", "INTEGER DEFAULT 0");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS bots (

@@ -173,6 +173,39 @@ export function getBotStatusInfo(botId: string): BotStatusInfo | null {
   };
 }
 
+export async function requestBotPairingCode(botId: string, phone: string): Promise<string> {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM bots WHERE id = ?").get(botId) as any;
+  if (!row) throw new Error(`Bot ${botId} not found`);
+
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phoneDigits.length < 7) throw new Error("Invalid phone number");
+
+  // Save the phone for future reconnects
+  db.prepare("UPDATE bots SET phone = ? WHERE id = ?").run(phoneDigits, botId);
+
+  const inst = live.get(botId);
+  if (!inst || !inst.sock) {
+    // Start the bot first, then it will auto-request the pairing code
+    await startBot(botId);
+    // Wait briefly then check
+    await new Promise((r) => setTimeout(r, 4000));
+    const updated = live.get(botId);
+    if (updated?.pairingCode) return updated.pairingCode;
+    throw new Error("Bot starting — check status in a few seconds for the pairing code");
+  }
+
+  try {
+    const code = await inst.sock.requestPairingCode(phoneDigits);
+    inst.pairingCode = code;
+    inst.status = "pairing";
+    db.prepare("UPDATE bots SET status = 'pairing' WHERE id = ?").run(botId);
+    return code;
+  } catch (err: any) {
+    throw new Error(err?.message || "Failed to request pairing code");
+  }
+}
+
 export function setPrimaryBot(botId: string): void {
   const db = getDb();
   db.prepare("UPDATE bots SET is_primary = 0").run();

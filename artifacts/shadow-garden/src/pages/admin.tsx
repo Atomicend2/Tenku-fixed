@@ -102,6 +102,8 @@ function AdminDashboard({ token, base, onLogout, toast }: {
   // Bot manager state
   const [newBotName, setNewBotName] = useState("");
   const [newBotPhone, setNewBotPhone] = useState("");
+  const [pairingPhones, setPairingPhones] = useState<Record<string, string>>({});
+  const [pairingLoading, setPairingLoading] = useState<Record<string, boolean>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -206,6 +208,22 @@ function AdminDashboard({ token, base, onLogout, toast }: {
         searchPlayers(playerQuery);
       }
     } finally { setActionPending(false); }
+  };
+
+  const requestPairingCode = async (botId: string) => {
+    const phone = pairingPhones[botId]?.trim();
+    if (!phone) { toast({ title: "Error", description: "Enter a phone number first." }); return; }
+    setPairingLoading((prev) => ({ ...prev, [botId]: true }));
+    try {
+      const r = await fetch(`${base}/api/v1/admin/bots/${botId}/request-pairing`, {
+        method: "POST", headers: { ...authHeader, "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const j = await r.json();
+      toast({ title: j.success ? "Pairing Code Requested" : "Error", description: j.message });
+      if (j.success) fetchBotStatuses();
+    } catch { toast({ title: "Error", description: "Failed to request pairing code." }); }
+    finally { setPairingLoading((prev) => ({ ...prev, [botId]: false })); }
   };
 
   const botAction = async (id: string, action: string, label: string) => {
@@ -697,6 +715,28 @@ function AdminDashboard({ token, base, onLogout, toast }: {
                         <div className="bg-amber-400/5 border border-amber-400/30 rounded-lg px-4 py-3">
                           <p className="text-[10px] uppercase tracking-widest text-amber-400/70 mb-1">Enter this code in WhatsApp → Linked Devices → Link a Device</p>
                           <p className="font-mono text-2xl font-bold text-amber-400 tracking-[0.4em]">{bot.pairingCode}</p>
+                        </div>
+                      )}
+
+                      {/* Request pairing code (when connected or no pairing code showing) */}
+                      {!bot.pairingCode && bot.status !== "connected" && (
+                        <div className="bg-sky-400/5 border border-sky-400/20 rounded-lg px-4 py-3 space-y-2">
+                          <p className="text-[10px] uppercase tracking-widest text-sky-400/70">Request Pairing Code</p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Phone with country code e.g. 2348144550593"
+                              value={pairingPhones[bot.id] || ""}
+                              onChange={(e) => setPairingPhones((prev) => ({ ...prev, [bot.id]: e.target.value }))}
+                              className="flex-1 px-3 py-1.5 bg-black/30 border border-white/10 rounded-lg text-white placeholder:text-muted-foreground focus:outline-none focus:border-sky-400/50 text-xs font-mono"
+                            />
+                            <button
+                              onClick={() => requestPairingCode(bot.id)}
+                              disabled={pairingLoading[bot.id] || !pairingPhones[bot.id]?.trim()}
+                              className="px-3 py-1.5 rounded-lg bg-sky-400/10 border border-sky-400/30 text-sky-400 text-xs font-bold uppercase tracking-wider hover:bg-sky-400/20 disabled:opacity-50 transition-colors whitespace-nowrap">
+                              {pairingLoading[bot.id] ? "Requesting…" : "Get Code"}
+                            </button>
+                          </div>
                         </div>
                       )}
 

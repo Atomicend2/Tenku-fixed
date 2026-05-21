@@ -294,7 +294,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     }
     // user.id is already the phone number (normalized from JID)
     const phone = user.id;
-    updateUser(sender, { registered: 1, balance: (user.balance || 0) + 45000, phone });
+    updateUser(sender, { registered: 1, registered_at: now, balance: (user.balance || 0) + 45000, phone });
     await sendText(from, `✅ Welcome! You've been registered and received a $45,000 starter bonus!\n\nUse .p to see your profile.\nYou can log into the website using your phone number: *${phone}*`);
     return;
   }
@@ -366,8 +366,8 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     const name = target.name || `@${targetId.split("@")[0]}`;
     const age = target.age || "Not set";
     const bio = target.bio || "No bio set";
-    const registered = formatProfileDate(Number(target.created_at || now));
-    const daysSinceReg = Math.floor((now - Number(target.created_at || now)) / 86400);
+    const registered = formatProfileDate(Number(target.registered_at || target.created_at || now));
+    const daysSinceReg = Math.floor((now - Number(target.registered_at || target.created_at || now)) / 86400);
     const hasVideoProfile = Buffer.isBuffer(target.profile_picture_video) || Buffer.isBuffer(target.profile_background_video);
     const animatedProfile = hasVideoProfile
       ? await buildAnimatedProfileGif(ctx, targetId, target, rpg, rank, role).catch(async () => null)
@@ -376,8 +376,9 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       ? null
       : await buildProfileImage(ctx, targetId, target, rpg, rank, role).catch(async () => null);
 
-    const regDate = target.created_at
-      ? new Date(Number(target.created_at) * 1000).toLocaleDateString("en-GB", {
+    const regTimestamp = Number(target.registered_at || 0) || Number(target.created_at || 0);
+    const regDate = regTimestamp
+      ? new Date(regTimestamp * 1000).toLocaleDateString("en-GB", {
           day: "2-digit", month: "short", year: "numeric",
         })
       : "Unknown";
@@ -779,14 +780,15 @@ function getTotalXpScore(level: number, xp: number): number {
 }
 
 function getProfileRole(userId: string): string {
-  const phone = userId.split("@")[0];
+  const phone = userId.split("@")[0].split(":")[0];
   if (phone === BOT_OWNER_LID || userId === `${BOT_OWNER_LID}@s.whatsapp.net` || userId === `${BOT_OWNER_LID}@lid`) {
     return "Owner";
   }
   const staff = getStaff(userId);
+  if (staff?.role === "owner") return "Owner";
   if (staff?.role === "guardian") return "Guardian";
-  if (staff?.role === "mod") return "mod";
-  return "normal user";
+  if (staff?.role === "mod") return "Mod";
+  return "Ascendant";
 }
 
 function canSetProfileVideo(ctx: CommandContext, user: any): boolean {
