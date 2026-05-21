@@ -97,7 +97,7 @@ router.post("/login", (req, res) => {
 
 // ─── Stats ───────────────────────────────────────────────────────────
 
-router.get("/stats", requireAdminAccess as any, (req: AuthRequest, res) => {
+router.get("/stats", requireAdminAccess as any, async (req: AuthRequest, res) => {
   const db = getDb();
 
   const totalUsers   = (db.prepare("SELECT COUNT(*) as c FROM users WHERE COALESCE(is_bot,0)=0").get() as any)?.c || 0;
@@ -128,9 +128,11 @@ router.get("/stats", requireAdminAccess as any, (req: AuthRequest, res) => {
   ).all();
 
   const botConnected = isSocketConnected();
+  const { getPairingCode } = await import("../../bot/connection.js");
 
   res.json({
     botConnected,
+    pairingCode: getPairingCode(),
     isOwner: isOwner(req),
     stats: { totalUsers, totalBots, totalCards, totalGuilds, totalBanned, totalStaff },
     recentUsers,

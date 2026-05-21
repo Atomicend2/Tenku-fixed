@@ -66,6 +66,7 @@ let isConnecting = false;
 let pairingCode: string | null = null;
 let reconnectAttempts = 0;
 let connectionGeneration = 0;
+let isShuttingDown = false;
 const MAX_RECONNECT_DELAY = 30000;
 const STABLE_CONNECTION_MS = 30000;
 const replyContext = new AsyncLocalStorage<any>();
@@ -88,6 +89,19 @@ export function isSocketConnecting(): boolean {
 
 export function getPairingCode(): string | null {
   return pairingCode;
+}
+
+export async function gracefulShutdown(): Promise<void> {
+  isShuttingDown = true;
+  connectionGeneration++; // prevent any pending reconnect timers from firing
+  if (sock) {
+    try {
+      await sock.end(undefined);
+    } catch { /* ignore */ }
+    sock = null;
+  }
+  isConnected = false;
+  isConnecting = false;
 }
 
 export function getBotName(): string {
@@ -225,6 +239,11 @@ export async function connectToWhatsApp(phoneNumber?: string, options: ConnectOp
           }
         }, delay);
       } else {
+        // If we're shutting down intentionally, don't wipe auth — preserve creds for next startup
+        if (isShuttingDown) {
+          logger.info("Shutting down — skipping auth wipe");
+          return;
+        }
         logger.info("Logged out from WhatsApp — clearing auth and re-pairing");
         pairingCode = null;
         // Wipe only the auth credentials, preserve paired-phone.txt (it's outside AUTH_DIR now)
@@ -247,22 +266,21 @@ export async function connectToWhatsApp(phoneNumber?: string, options: ConnectOp
       isConnecting = false;
       pairingCode = null;
       logger.info("Connected to WhatsApp successfully");
-      // Sync owner numbers to DB on every connection
+      // Sync owner numbers to staff table only.
+      // We do NOT insert into users here — the owner gets a users row naturally
+      // when they send their first WhatsApp message. Inserting here would
+      // show unregistered owners in member counts and leaderboards.
       try {
         const { getDb } = await import("./db/database.js");
-        const { ensureUser, updateUser } = await import("./db/queries.js");
         const db = getDb();
         for (const phone of getOwnerNumbers()) {
-          const jid = `${phone}@s.whatsapp.net`;
-          ensureUser(jid, "Owner");
-          updateUser(jid, { phone });
-          // Ensure owner is in staff table with role='owner'
-          const existing = db.prepare("SELECT 1 FROM staff WHERE user_id = ?").get(jid);
-          if (!existing) {
-            db.prepare("INSERT OR REPLACE INTO staff (user_id, role, added_by, added_at) VALUES (?, 'owner', 'system', unixepoch())").run(jid);
+          // Use bare phone as user_id (consistent with normalizeUserId)
+          const existingStaff = db.prepare("SELECT 1 FROM staff WHERE user_id = ?").get(phone);
+          if (!existingStaff) {
+            db.prepare("INSERT OR REPLACE INTO staff (user_id, role, added_by, added_at) VALUES (?, 'owner', 'system', unixepoch())").run(phone);
           }
         }
-        logger.info({ owners: getOwnerNumbers() }, "Owner numbers synced to DB");
+        logger.info({ owners: getOwnerNumbers() }, "Owner numbers synced to staff");
       } catch (err) {
         logger.warn({ err }, "Failed to sync owner numbers");
       }

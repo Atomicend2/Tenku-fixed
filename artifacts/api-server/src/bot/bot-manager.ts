@@ -42,7 +42,13 @@ export async function startBot(botId: string): Promise<void> {
   fs.mkdirSync(authDir, { recursive: true });
 
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
-  const { version } = await fetchLatestBaileysVersion();
+  let version: any;
+  try {
+    ({ version } = await fetchLatestBaileysVersion());
+  } catch (err) {
+    logger.warn({ err, botId }, "Could not fetch latest Baileys version, using fallback");
+    version = [2, 3000, 1015901307];
+  }
   const silent = Pino({ level: "silent" }) as any;
 
   const sock = makeWASocket({

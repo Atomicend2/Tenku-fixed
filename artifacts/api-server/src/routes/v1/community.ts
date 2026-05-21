@@ -6,7 +6,7 @@ const router = Router();
 router.get("/stats", (_req, res) => {
   const db = getDb();
 
-  const totalMembers = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_bot, 0) = 0").get() as any)?.cnt || 0;
+  const totalMembers = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_bot, 0) = 0 AND COALESCE(registered, 0) = 1").get() as any)?.cnt || 0;
   const totalCards = (db.prepare("SELECT COUNT(*) as cnt FROM cards").get() as any)?.cnt || 0;
   const totalGuilds = (db.prepare("SELECT COUNT(*) as cnt FROM guilds").get() as any)?.cnt || 0;
   const totalBots = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_bot, 0) = 1").get() as any)?.cnt || 0;

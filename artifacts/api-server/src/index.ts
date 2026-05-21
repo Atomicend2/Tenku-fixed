@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { connectToWhatsApp } from "./bot/connection.js";
+import { connectToWhatsApp, gracefulShutdown } from "./bot/connection.js";
 import { getDb } from "./bot/db/database.js";
 
 const rawPort = process.env["PORT"];
@@ -18,6 +18,20 @@ if (Number.isNaN(port) || port <= 0) {
 getDb();
 logger.info("Database initialized");
 
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info({ signal }, "Graceful shutdown initiated");
+  try {
+    await gracefulShutdown();
+  } catch {}
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT",  () => shutdown("SIGINT"));
+
 app.listen(port, async (err?: Error) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -28,7 +42,7 @@ app.listen(port, async (err?: Error) => {
   const phone = process.env["BOT_PHONE_NUMBER"];
   try {
     logger.info("Starting WhatsApp bot...");
-    await connectToWhatsApp(phone || undefined);
+    await connectToWhatsApp(phone || undefined, { promptForPhone: false });
   } catch (botErr) {
     logger.error({ botErr }, "Failed to start bot (will retry automatically)");
   }

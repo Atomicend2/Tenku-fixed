@@ -37,12 +37,33 @@ export async function handleMessage(
   const senderRaw = isGroup
     ? (msg.key.participant || (msg.key.fromMe ? getPrimaryBotJid(sock) : ""))
     : (msg.key.remoteJid || "");
-  const sender = senderRaw;
+  let sender = senderRaw;
+  let resolvedGroupMeta: any = null;
 
   if (!sender) return;
 
   // Skip bots entirely — fromMe (own bot messages) and DB-flagged bots
   if (msg.key.fromMe) return;
+
+  // ── LID resolution ──────────────────────────────────────────────────────────
+  // Newer WhatsApp clients use @lid JIDs in groups (e.g. 101xxx@lid) instead
+  // of the real phone JID. Resolve to the real @s.whatsapp.net JID using
+  // group metadata so we always store the phone number as the user ID.
+  if (sender.endsWith("@lid") && isGroup) {
+    try {
+      resolvedGroupMeta = await sock.groupMetadata(from);
+      for (const p of resolvedGroupMeta.participants as any[]) {
+        const isMatch = p.id === sender || p.lid === sender;
+        if (isMatch) {
+          const realJid = ([p.id, p.lid] as string[])
+            .find(j => j?.endsWith("@s.whatsapp.net"));
+          if (realJid) { sender = realJid; break; }
+        }
+      }
+    } catch {}
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
   const senderNormalized = sender.split("@")[0].split(":")[0];
   const senderUserRecord = getUser(senderNormalized);
   if (senderUserRecord?.is_bot === 1) return;
@@ -77,7 +98,7 @@ export async function handleMessage(
     incrementGroupActivity(from);
   }
 
-  let groupMeta: any = null;
+  let groupMeta: any = resolvedGroupMeta;
   let isAdmin = false;
   let isBotAdmin = false;
   let isGroupAdmin = false;
@@ -85,7 +106,7 @@ export async function handleMessage(
   if (isGroup) {
     try {
       ensureGroup(from);
-      groupMeta = await sock.groupMetadata(from);
+      if (!groupMeta) groupMeta = await sock.groupMetadata(from);
       const botIds = getBotIdentityCandidates(sock);
 
       const senderParticipant = groupMeta.participants.find(

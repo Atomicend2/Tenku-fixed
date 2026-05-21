@@ -603,7 +603,12 @@ export function addStaff(userId: string, role: string, addedBy: string) {
 
 export function getStaff(userId: string) {
   const db = getDb();
-  return db.prepare("SELECT * FROM staff WHERE user_id = ?").get(userId) as any;
+  const normalized = normalizeUserId(userId);
+  // Try bare phone first (current format), then full JID for backwards compat
+  return (
+    db.prepare("SELECT * FROM staff WHERE user_id = ?").get(normalized) ||
+    db.prepare("SELECT * FROM staff WHERE user_id = ?").get(userId)
+  ) as any;
 }
 
 export function removeStaff(userId: string, role?: string) {
