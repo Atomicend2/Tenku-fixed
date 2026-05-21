@@ -101,7 +101,7 @@ router.get("/stats", requireAdminAccess as any, async (req: AuthRequest, res) =>
   const db = getDb();
 
   const totalUsers   = (db.prepare("SELECT COUNT(*) as c FROM users WHERE COALESCE(is_bot,0)=0 AND COALESCE(registered,0)=1").get() as any)?.c || 0;
-  const totalBots    = (db.prepare("SELECT COUNT(*) as c FROM users WHERE COALESCE(is_bot,0)=1").get() as any)?.c || 0;
+  const totalBots    = (db.prepare("SELECT COUNT(*) as c FROM bots").get() as any)?.c || 0;
   const totalCards   = (db.prepare("SELECT COUNT(*) as c FROM cards").get() as any)?.c || 0;
   const totalGuilds  = (db.prepare("SELECT COUNT(*) as c FROM guilds").get() as any)?.c || 0;
   const totalBanned  = (db.prepare("SELECT COUNT(*) as c FROM banned_entities").get() as any)?.c || 0;

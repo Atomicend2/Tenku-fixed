@@ -496,12 +496,6 @@ function initSchema(db: Database.Database): void {
   ensureColumn(db, "word_chain", "word_deadline", "INTEGER DEFAULT 0");
   ensureColumn(db, "word_chain", "eliminated", "TEXT DEFAULT '[]'");
 
-  // Known bots — pre-seed as is_bot=1 so they are excluded from economy/ranks
-  const knownBots = ["243971941339"];
-  for (const phone of knownBots) {
-    db.prepare("INSERT OR IGNORE INTO users (id, name, is_bot) VALUES (?, 'Bot', 1)").run(phone);
-    db.prepare("UPDATE users SET is_bot = 1 WHERE id = ?").run(phone);
-  }
 }
 
 function ensureColumn(db: Database.Database, table: string, column: string, definition: string): void {

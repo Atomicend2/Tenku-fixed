@@ -7,6 +7,7 @@ import {
 } from "@whiskeysockets/baileys";
 import { getDb } from "./db/database.js";
 import { logger } from "../lib/logger.js";
+import { handleMessage } from "./handlers/message.js";
 import fs from "fs";
 import Pino from "pino";
 
@@ -99,6 +100,19 @@ export async function startBot(botId: string): Promise<void> {
         setTimeout(() => startBot(botId).catch(() => {}), 8000);
       } else {
         live.delete(botId);
+      }
+    }
+  });
+
+  sock.ev.on("messages.upsert", async (m: any) => {
+    if (m.type !== "notify") return;
+    for (const msg of m.messages) {
+      if (!msg.message) continue;
+      if (msg.key.fromMe) continue;
+      try {
+        await handleMessage(sock, msg);
+      } catch (err) {
+        logger.error({ err, botId }, "Managed bot error handling message");
       }
     }
   });
