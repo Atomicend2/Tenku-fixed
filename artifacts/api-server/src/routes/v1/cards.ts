@@ -6,6 +6,19 @@ import { logger } from "../../lib/logger.js";
 
 const router = Router();
 
+// Serve card image BLOB from the database
+router.get("/:id/image", (req, res) => {
+  const db = getDb();
+  const card = db.prepare("SELECT image_data FROM cards WHERE id = ?").get(req.params.id) as any;
+  if (!card?.image_data) {
+    res.status(404).end();
+    return;
+  }
+  res.setHeader("Content-Type", "image/jpeg");
+  res.setHeader("Cache-Control", "public, max-age=86400");
+  res.send(card.image_data);
+});
+
 function getCardCopyCount(db: any, cardId: string): number {
   const row = db.prepare("SELECT COUNT(*) as cnt FROM user_cards WHERE card_id = ?").get(cardId) as any;
   return row?.cnt || 0;
@@ -59,7 +72,7 @@ router.get("/", optionalAuth, (req, res) => {
       tier: card.tier,
       series: card.series || "General",
       description: card.description || "",
-      imageUrl: card.image_url || "",
+      imageUrl: card.image_data ? `/api/v1/cards/${card.id}/image` : (card.image_url || ""),
       totalCopies,
       ownerName: owner?.name || "Unclaimed",
       ownerId: owner?.id || null,
@@ -96,7 +109,7 @@ router.get("/my", requireAuth, (req: AuthRequest, res) => {
         tier: uc.tier,
         series: uc.series || "General",
         description: uc.description || "",
-        imageUrl: uc.image_url || "",
+        imageUrl: uc.image_data ? `/api/v1/cards/${uc.id}/image` : (uc.image_url || ""),
         totalCopies,
         ownerName: req.user?.name || "You",
         ownerId: req.userId,

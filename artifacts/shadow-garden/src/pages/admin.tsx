@@ -227,6 +227,20 @@ function AdminDashboard({ token, base, onLogout, toast }: {
     } catch { toast({ title: "Error", description: "Failed." }); }
   };
 
+  const uploadMenuImage = async (botId: string, file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    try {
+      const r = await fetch(`${base}/api/v1/admin/bots/${botId}/menu-image`, {
+        method: "POST",
+        headers: authHeader,
+        body: form,
+      });
+      const j = await r.json();
+      toast({ title: j.success ? "Image Uploaded" : "Error", description: j.message });
+    } catch { toast({ title: "Error", description: "Upload failed." }); }
+  };
+
   const toggleBotRole = async (bot: any, role: string) => {
     const roles: string[] = (() => { try { return JSON.parse(bot.roles || "[]"); } catch { return []; } })();
     const next = roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role];
@@ -691,6 +705,13 @@ function AdminDashboard({ token, base, onLogout, toast }: {
                           )}>
                           {hasOtp ? "✓ OTP Role" : "+ OTP Role"}
                         </button>
+                        <label className="text-xs px-3 py-1.5 rounded-lg bg-violet-400/10 border border-violet-400/30 text-violet-400 font-bold uppercase tracking-wider hover:bg-violet-400/20 transition-colors cursor-pointer">
+                          📷 Menu Image
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) { uploadMenuImage(bot.id, file); e.target.value = ""; }
+                          }} />
+                        </label>
                       </div>
                     </div>
                   );
