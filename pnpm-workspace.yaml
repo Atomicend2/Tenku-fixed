@@ -70,8 +70,13 @@ autoInstallPeers: false
 
 onlyBuiltDependencies:
   - '@swc/core'
+  - '@firebase/util'
+  - '@whiskeysockets/baileys'
+  - better-sqlite3
   - esbuild
   - msw
+  - protobufjs
+  - sharp
   - unrs-resolver
 
 overrides:
