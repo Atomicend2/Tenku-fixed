@@ -122,7 +122,6 @@ router.post("/register", async (req, res) => {
 
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
-  const jid = `${normalized}@s.whatsapp.net`;
 
   const existing = getUserByPhone(normalized);
   if (existing && existing.registered) {
@@ -135,13 +134,22 @@ router.post("/register", async (req, res) => {
   }
 
   if (!existing) {
+    // Use the plain phone number as the canonical user ID — never the JID
     db.prepare(
       "INSERT OR IGNORE INTO users (id, name, phone, registered, registered_at, created_at, balance) VALUES (?, ?, ?, 1, ?, ?, 45000)"
-    ).run(jid, trimmedName, normalized, now, now);
+    ).run(normalized, trimmedName, normalized, now, now);
   } else {
-    db.prepare(
-      "UPDATE users SET name = ?, phone = ?, registered = 1, registered_at = ? WHERE id = ?"
-    ).run(trimmedName, normalized, now, existing.id);
+    // Migrate any old JID-keyed row to the plain phone number key
+    const existingPhone = existing.id.split("@")[0].split(":")[0];
+    if (existingPhone !== existing.id) {
+      // Old row had JID as id — update to plain phone
+      db.prepare("UPDATE users SET id = ?, name = ?, phone = ?, registered = 1, registered_at = ? WHERE id = ?")
+        .run(normalized, trimmedName, normalized, now, existing.id);
+    } else {
+      db.prepare(
+        "UPDATE users SET name = ?, phone = ?, registered = 1, registered_at = ? WHERE id = ?"
+      ).run(trimmedName, normalized, now, normalized);
+    }
   }
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -151,7 +159,7 @@ router.post("/register", async (req, res) => {
   const sock = getSocket();
   if (sock && isSocketConnected()) {
     try {
-      await sock.sendMessage(jid, {
+      await sock.sendMessage(`${normalized}@s.whatsapp.net`, {
         text: `*Tenku 天空* — Welcome, ${trimmedName}!\n\nYour registration code:\n\n*${code}*\n\nExpires in 5 minutes. Don't share this code.`,
       });
     } catch (err) {
@@ -208,20 +216,21 @@ router.post("/otp/verify", (req, res) => {
     return;
   }
 
+  // Always use the plain phone number as the session user_id
   const token = randomBytes(32).toString("hex");
   const sessionExpiry = now + 30 * 24 * 3600;
-  db.prepare("INSERT INTO web_sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(token, user.id, sessionExpiry);
+  db.prepare("INSERT INTO web_sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(token, normalized, sessionExpiry);
 
   const BOT_OWNER = (process.env["BOT_OWNER_LID"] || "2348144550593").replace(/\D/g, "");
-  const isOwner = normalized === BOT_OWNER || user.id?.split("@")[0] === BOT_OWNER;
-  const staffRow = db.prepare("SELECT 1 FROM staff WHERE user_id = ? OR user_id LIKE ?").get(user.id, `${normalized}%`);
+  const isOwner = normalized === BOT_OWNER;
+  const staffRow = db.prepare("SELECT 1 FROM staff WHERE user_id = ?").get(normalized);
   const isMod = isOwner || !!staffRow ? 1 : 0;
 
   res.json({
     success: true,
     token,
     user: {
-      id: user.id,
+      id: normalized,
       name: user.name || "Shadow",
       phone: normalized,
       level: user.level || 1,
