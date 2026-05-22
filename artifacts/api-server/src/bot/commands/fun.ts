@@ -215,27 +215,83 @@ const JOKES = [
 ];
 
 // 20 anime-inspired Unicode font styles for .fancy command
-const FANCY_STYLES = [
-  (t: string) => t.split("").map(c => "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇0123456789"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".indexOf(c)] || c).join(""),
-  (t: string) => t.split("").map(c => "𝘈𝘉𝘊𝘋𝘌𝘍𝘎𝘏𝘐𝘑𝘒𝘓𝘔𝘕𝘖𝘗𝘘𝘙𝘚𝘛𝘜𝘝𝘞𝘟𝘠𝘡𝘢𝘣𝘤𝘥𝘦𝘧𝘨𝘩𝘪𝘫𝘬𝘭𝘮𝘯𝘰𝘱𝘲𝘳𝘴𝘵𝘶𝘷𝘸𝘹𝘺𝘻"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  (t: string) => t.split("").map(c => "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  (t: string) => t.split("").map(c => "𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝓨𝓩𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  (t: string) => t.split("").map(c => "𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  (t: string) => t.split("").map(c => "𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  (t: string) => t.split("").map(c => "𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  (t: string) => [...t].map(c => c + "\u20e3").join(""),
-  (t: string) => t.toUpperCase().split("").join(" "),
-  (t: string) => t.split("").map(c => ({ a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"Q",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" }[c.toLowerCase()] || c)).join(""),
-  (t: string) => t.split("").map(c => "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
-  (t: string) => "꧁༺ " + t + " ༻꧂",
-  (t: string) => "∙̣̇" + t.split("").join("∙") + "∙̣̇",
-  (t: string) => "『 " + t + " 』",
-  (t: string) => "「 " + t + " 」",
-  (t: string) => "【 " + t + " 】",
-  (t: string) => "✦ " + t.split("").join(" ") + " ✦",
-  (t: string) => t.split("").map((c,i) => i%2===0 ? c.toUpperCase() : c.toLowerCase()).join(""),
-  (t: string) => t.split("").reverse().join(""),
-  (t: string) => "🌸 " + t.split("").join(" 🌸 ") + " 🌸",
+const FANCY_STYLES: Array<(t: string) => string> = [
+  // 1. Bold sans-serif
+  (t) => t.split("").map(c => "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇0123456789"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".indexOf(c)] || c).join(""),
+  // 2. Sans-serif italic
+  (t) => t.split("").map(c => "𝘈𝘉𝘊𝘋𝘌𝘍𝘎𝘏𝘐𝘑𝘒𝘓𝘔𝘕𝘖𝘗𝘘𝘙𝘚𝘛𝘜𝘝𝘞𝘟𝘠𝘡𝘢𝘣𝘤𝘥𝘦𝘧𝘨𝘩𝘪𝘫𝘬𝘭𝘮𝘯𝘰𝘱𝘲𝘳𝘴𝘵𝘶𝘷𝘸𝘹𝘺𝘻"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 3. Monospace
+  (t) => t.split("").map(c => "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 4. Bold script / cursive
+  (t) => t.split("").map(c => "𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝓨𝓩𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 5. Fraktur
+  (t) => t.split("").map(c => "𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 6. Bold fraktur / Gothic bold
+  (t) => t.split("").map(c => "𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 7. Double-struck
+  (t) => t.split("").map(c => "𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 8. Bold serif
+  (t) => t.split("").map(c => "𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 9. Italic serif
+  (t) => t.split("").map(c => "𝐴𝐵𝐶𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾𝐿𝑀𝑁𝑂𝑃𝑄𝑅𝑆𝑇𝑈𝑉𝑊𝑋𝑌𝑍𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 10. Bold italic serif
+  (t) => t.split("").map(c => "𝑨𝑩𝑪𝑫𝑬𝑭𝑮𝑯𝑰𝑱𝑲𝑳𝑴𝑵𝑶𝑷𝑸𝑹𝑺𝑻𝑼𝑽𝑾𝑿𝒀𝒁𝒂𝒃𝒄𝒅𝒆𝒇𝒈𝒉𝒊𝒋𝒌𝒍𝒎𝒏𝒐𝒑𝒒𝒓𝒔𝒕𝒖𝒗𝒘𝒙𝒚𝒛"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 11. Sans-serif
+  (t) => t.split("").map(c => "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 12. Bold italic sans-serif
+  (t) => t.split("").map(c => "𝘼𝘽𝘾𝘿𝙀𝙁𝙂𝙃𝙄𝙅𝙆𝙇𝙈𝙉𝙊𝙋𝙌𝙍𝙎𝙏𝙐𝙑𝙒𝙓𝙔𝙕𝙖𝙗𝙘𝙙𝙚𝙛𝙜𝙝𝙞𝙟𝙠𝙡𝙢𝙣𝙤𝙥𝙦𝙧𝙨𝙩𝙪𝙫𝙬𝙭𝙮𝙯"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  // 13. Fullwidth
+  (t) => t.split("").map(c => "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
+  // 14. Circled letters
+  (t) => t.split("").map(c => "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
+  // 15. Negative squared / bold box letters
+  (t) => t.toUpperCase().split("").map(c => {
+    const idx = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c);
+    return idx >= 0 ? "🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩"[idx] : c;
+  }).join(""),
+  // 16. Small caps
+  (t) => t.split("").map(c => ({ a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"Q",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" }[c.toLowerCase()] || c)).join(""),
+  // 17. Subscript
+  (t) => t.split("").map(c => ({ a:"ₐ",e:"ₑ",h:"ₕ",i:"ᵢ",j:"ⱼ",k:"ₖ",l:"ₗ",m:"ₘ",n:"ₙ",o:"ₒ",p:"ₚ",r:"ᵣ",s:"ₛ",t:"ₜ",u:"ᵤ",v:"ᵥ",x:"ₓ",0:"₀",1:"₁",2:"₂",3:"₃",4:"₄",5:"₅",6:"₆",7:"₇",8:"₈",9:"₉" }[c.toLowerCase()] || c)).join(""),
+  // 18. Superscript
+  (t) => t.split("").map(c => ({ a:"ᴬ",b:"ᴮ",c:"ᶜ",d:"ᴰ",e:"ᴱ",f:"ᶠ",g:"ᴳ",h:"ᴴ",i:"ᴵ",j:"ᴶ",k:"ᴷ",l:"ᴸ",m:"ᴹ",n:"ᴺ",o:"ᴼ",p:"ᴾ",r:"ᴿ",s:"ˢ",t:"ᵀ",u:"ᵁ",v:"ⱽ",w:"ᵂ",0:"⁰",1:"¹",2:"²",3:"³",4:"⁴",5:"⁵",6:"⁶",7:"⁷",8:"⁸",9:"⁹" }[c] || c.toLowerCase() === c ? ({ a:"ᵃ",b:"ᵇ",c:"ᶜ",d:"ᵈ",e:"ᵉ",f:"ᶠ",g:"ᵍ",h:"ʰ",i:"ⁱ",j:"ʲ",k:"ᵏ",l:"ˡ",m:"ᵐ",n:"ⁿ",o:"ᵒ",p:"ᵖ",r:"ʳ",s:"ˢ",t:"ᵗ",u:"ᵘ",v:"ᵛ",w:"ʷ",x:"ˣ",y:"ʸ",z:"ᶻ" }[c] || c) : c)).join(""),
+  // 19. Upside down
+  (t) => t.split("").map(c => ({ a:"ɐ",b:"q",c:"ɔ",d:"p",e:"ǝ",f:"ɟ",g:"ƃ",h:"ɥ",i:"ı",j:"ɾ",k:"ʞ",l:"l",m:"ɯ",n:"u",o:"o",p:"d",q:"b",r:"ɹ",s:"s",t:"ʇ",u:"n",v:"ʌ",w:"ʍ",x:"x",y:"ʎ",z:"z",A:"∀",B:"ᗺ",C:"Ɔ",D:"ᗡ",E:"Ǝ",F:"Ⅎ",G:"פ",H:"H",I:"I",J:"ɾ",K:"ʞ",L:"˥",M:"W",N:"N",O:"O",P:"Ԁ",Q:"Q",R:"ᴚ",S:"S",T:"ʇ",U:"∩",V:"ʌ",W:"M",X:"X",Y:"⅄",Z:"Z" }[c] || c)).reverse().join(""),
+  // 20. Aesthetic (cyrillic mix)
+  (t) => t.split("").map(c => ({ h:"н",e:"є",l:"ℓ",o:"σ",a:"α",b:"в",c:"¢",d:"∂",f:"f",g:"g",i:"ι",j:"נ",k:"к",m:"м",n:"η",p:"ρ",q:"q",r:"я",s:"ѕ",t:"т",u:"υ",v:"ν",w:"ω",x:"χ",y:"у",z:"z" }[c.toLowerCase()] || c)).join(""),
+  // 21. Spaced uppercase
+  (t) => t.toUpperCase().split("").join(" "),
+  // 22. Alternating case
+  (t) => t.split("").map((c, i) => i % 2 === 0 ? c.toUpperCase() : c.toLowerCase()).join(""),
+  // 23. Reversed
+  (t) => t.split("").reverse().join(""),
+  // 24. Keycap emoji
+  (t) => [...t].map(c => c + "\u20e3").join(""),
+  // 25. Regional indicator flags
+  (t) => t.toUpperCase().split("").map(c => {
+    const idx = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c);
+    return idx >= 0 ? String.fromCodePoint(0x1F1E6 + idx) : c;
+  }).join(""),
+  // 26. Strikethrough
+  (t) => t.split("").map(c => c + "\u0336").join(""),
+  // 27. Underline
+  (t) => t.split("").map(c => c + "\u0332").join(""),
+  // 28. ꧁༺ wrap
+  (t) => "꧁༺ " + t + " ༻꧂",
+  // 29. 『 』 brackets
+  (t) => "『 " + t + " 』",
+  // 30. 「 」 brackets
+  (t) => "「 " + t + " 」",
+  // 31. 【 】 brackets
+  (t) => "【 " + t + " 】",
+  // 32. ✦ spaced
+  (t) => "✦ " + t.split("").join(" ") + " ✦",
+  // 33. dot separator
+  (t) => "∙̣̇" + t.split("").join("∙") + "∙̣̇",
+  // 34. 🌸 separator
+  (t) => "🌸 " + t.split("").join(" 🌸 ") + " 🌸",
+  // 35. Star wrap
+  (t) => "★彡 " + t + " 彡★",
 ];
 
 const SOCIALS = [
@@ -266,8 +322,6 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
   const { from, sender, args, command: cmd, msg, sock } = ctx;
   const name = sender.split("@")[0];
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-  await sendText(from, loadingText(cmd), [sender]);
-
   if (cmd === "gay") {
     const targetId = getFunTarget(ctx);
     const targetName = targetId.split("@")[0];
@@ -390,16 +444,32 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
   if (cmd === "fancy") {
     const styleNum = parseInt(args[0]);
     const text = args.slice(1).join(" ");
+    const total = FANCY_STYLES.length;
     if (!args[0] || isNaN(styleNum) || !text) {
-      const preview = FANCY_STYLES.slice(0, 5).map((fn, i) => `${i + 1}. ${fn("Tenku")}`).join("\n");
+      const allPreviews = FANCY_STYLES.map((fn, i) => `${String(i + 1).padStart(2, "0")}. ${fn("Hello")}`).join("\n");
       await sendText(from,
-        `🎭 *Fancy Text Styles*\n\nUsage: .fancy <1-20> <text>\n\nExample:\n.fancy 4 Tenku\n\nStyle previews (1-5):\n${preview}\n\n_Try all 20 styles!_`
+        `┌─⟡ 🎭 𝗙𝗔𝗡𝗖𝗬 𝗧𝗘𝗫𝗧 𝗦𝗧𝗬𝗟𝗘𝗦\n║\n` +
+        `║ ➩ Usage: .fancy <1-${total}> <text>\n` +
+        `║ ➩ Example: .fancy 4 Hello\n` +
+        `╠─────────────────────\n` +
+        `║ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗦𝗧𝗬𝗟𝗘𝗦:\n` +
+        `║\n` +
+        allPreviews.split("\n").map(l => `║ ${l}`).join("\n") + "\n" +
+        `╚══════════════════════╝`
       );
       return;
     }
-    const idx = Math.max(1, Math.min(20, styleNum)) - 1;
+    const idx = Math.max(1, Math.min(total, styleNum)) - 1;
     const styled = FANCY_STYLES[idx](text);
-    await sendText(from, `🎭 Style ${styleNum}:\n\n${styled}`);
+    await sendText(from,
+      `┌─⟡ 🎭 𝗙𝗔𝗡𝗖𝗬 𝗧𝗘𝗫𝗧\n` +
+      `║ ➩ Style ${styleNum}/${total}\n` +
+      `╠─────────────────────\n` +
+      `║\n` +
+      `║ ${styled}\n` +
+      `║\n` +
+      `╚══════════════════════╝`
+    );
     return;
   }
 }

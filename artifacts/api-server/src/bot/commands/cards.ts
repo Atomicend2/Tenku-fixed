@@ -112,17 +112,32 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         `∘₊✦────────✦₊∘`;
       await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
     } else {
-      const tierLabel = searchTier ? ` [${searchTier}]` : "";
-      let text = `∘₊✦────────✦₊∘\n🎴 𝗖𝗔𝗥𝗗 𝗜𝗡𝗙𝗢 — Multiple Results${tierLabel}\n∘₊✦────────✦₊∘\n\n`;
       for (let i = 0; i < matches.length; i++) {
         const c = matches[i];
         const owners = getCardOwners(c.id);
-        text += `🃏 ${i + 1}. *${c.name}*\n`;
-        text += `   𝗦𝗲𝗿𝗶𝗲𝘀: ${c.series || "General"}\n`;
-        text += `   𝗧𝗶𝗲𝗿: ${c.tier}\n`;
-        text += `   𝗢𝘄𝗻𝗲𝗿𝘀: ${owners.length}\n\n`;
+        const buf = await getCardImageBuffer(c);
+        const ownerMentions: string[] = [];
+        let ownersSection = "_⛔ No owners yet_";
+        if (owners.length > 0) {
+          const shown = owners.slice(0, 5);
+          ownersSection = shown.map((o) => {
+            ownerMentions.push(o.user_id);
+            return `• @${o.user_id.split("@")[0]}`;
+          }).join("\n");
+          if (owners.length > 5) ownersSection += `\n_...and ${owners.length - 5} more_`;
+        }
+        const caption =
+          `∘₊✦────────✦₊∘\n` +
+          `🎴 𝗖𝗔𝗥𝗗 ${i + 1}/${matches.length}\n` +
+          `∘₊✦────────✦₊∘\n\n` +
+          `𝗡𝗮𝗺𝗲: ${c.name}\n` +
+          `𝗦𝗲𝗿𝗶𝗲𝘀: ${c.series || "General"}\n` +
+          `𝗧𝗶𝗲𝗿: ${c.tier}\n` +
+          `𝗢𝘄𝗻𝗲𝗿𝘀: ${owners.length}\n\n` +
+          `👥 𝗢𝗪𝗡𝗘𝗥𝗦\n${ownersSection}\n\n` +
+          `∘₊✦────────✦₊∘`;
+        await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
       }
-      await sendText(from, text.trim());
     }
     return;
   }
@@ -285,14 +300,28 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const cards = getUserCards(sender);
     const matches = cards.filter((c) => c.name.toLowerCase().includes(query));
     if (matches.length === 0) { await sendText(from, `❌ No cards matching "${args.join(" ")}".`); return; }
-    const lines = matches.slice(0, 20).map((c, i) => {
+    const shown = matches.slice(0, 20);
+    const lines = shown.map((c, i) => {
+      const collIndex = cards.indexOf(c) + 1;
       const tierNum = c.tier.replace(/^T/, "");
-      const tierLabel = c.tier.startsWith("T") && !isNaN(Number(tierNum)) ? `Tier ${tierNum}` : c.tier;
-      return `${i + 1}. ${c.name} — ${tierLabel}`;
+      const tierLabel = c.tier.startsWith("T") && !isNaN(Number(tierNum)) ? `T${tierNum}` : c.tier;
+      return (
+        `┌─⟡ 𝗖𝗔𝗥𝗗 ${i + 1}\n` +
+        `║ ➩ 𝗡𝗮𝗺𝗲 : ${c.name}\n` +
+        `║ ➩ 𝗦𝗲𝗿𝗶𝗲𝘀 : ${c.series || "General"}\n` +
+        `║ ➩ 𝗧𝗶𝗲𝗿 : ${tierLabel}\n` +
+        `║ ➩ 𝗜𝗻𝗱𝗲𝘅 : #${collIndex}\n` +
+        `║ ➩ 𝗜𝗗 : ${c.id}\n` +
+        `└────────────────`
+      );
     });
-    const text = `🔍 *Search results for "${args.join(" ")}"*\n\n${lines.join("\n")}` +
-      (matches.length > 20 ? `\n\n_...and ${matches.length - 20} more_` : "");
-    await sendText(from, text);
+    const header =
+      `┌─⟡ 🔍 𝗦𝗘𝗔𝗥𝗖𝗛 𝗥𝗘𝗦𝗨𝗟𝗧𝗦\n` +
+      `║ ➩ Query : "${args.join(" ")}"\n` +
+      `║ ➩ Found : ${matches.length} card(s)\n` +
+      `╠─────────────────────\n`;
+    const footer = matches.length > 20 ? `\n_...and ${matches.length - 20} more_` : "";
+    await sendText(from, header + lines.join("\n") + footer);
     return;
   }
 
@@ -312,8 +341,26 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       LIMIT 10
     `).all(`%${seriesName}%`) as any[];
     if (rows.length === 0) { await sendText(from, `❌ No collectors found for series "${seriesName}".`); return; }
-    const lines = rows.map((r, i) => `${i + 1}. ${r.name || r.user_id.split("@")[0]} — ${r.cnt} cards`);
-    await sendText(from, `📊 *${seriesName} Series Leaderboard*\n\n${lines.join("\n")}`);
+    const MEDALS = ["🥇", "🥈", "🥉"];
+    const lines = rows.map((r, i) => {
+      const medal = MEDALS[i] || `${String(i + 1).padStart(2, "0")}.`;
+      const name = r.name || r.user_id.split("@")[0];
+      return `║ ║ ${medal} ${name}\n║ ║     └─ 🃏 ${r.cnt} cards`;
+    });
+    const text =
+      `┌─⟡ 『 📊 𝗦𝗘𝗥𝗜𝗘𝗦 𝗟𝗘𝗔𝗗𝗘𝗥𝗕𝗢𝗔𝗥𝗗 』⟡\n` +
+      `║\n` +
+      `║ ┌──────────────────────\n` +
+      `║ ║ 📚 𝗦𝗲𝗿𝗶𝗲𝘀 : ${seriesName}\n` +
+      `║ ║ 👥 𝗧𝗼𝗽 𝗖𝗼𝗹𝗹𝗲𝗰𝘁𝗼𝗿𝘀\n` +
+      `║ └──────────────────────\n` +
+      `║\n` +
+      `╠─⟡ 🏆 𝗥𝗔𝗡𝗞𝗜𝗡𝗚𝗦\n` +
+      `║ ┌──────────────────────\n` +
+      lines.join("\n") + "\n" +
+      `║ └──────────────────────\n` +
+      `╚══════════════════════╝`;
+    await sendText(from, text);
     return;
   }
 
@@ -374,7 +421,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const imageBase64 = (Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer as any)).toString("base64");
 
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

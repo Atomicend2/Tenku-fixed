@@ -90,7 +90,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       if (row.item?.includes("50K Bank Note")) capBonus += 250000;
       if (row.item?.includes("100K Bank Note")) capBonus += 750000;
     }
-    const accountCapacity = 5_000_000 + capBonus;
+    const accountCapacity = 50_000 + capBonus;
     const pct = Math.min(100, Math.floor((total / accountCapacity) * 100));
     const filled = Math.round((pct / 100) * 10);
     const bar = "█".repeat(filled) + "░".repeat(10 - filled);
@@ -292,10 +292,16 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       await sendText(from, "✅ You're already registered!");
       return;
     }
-    // user.id is already the phone number (normalized from JID)
-    const phone = user.id;
+    const phone = sender.split("@")[0].split(":")[0];
     updateUser(sender, { registered: 1, registered_at: now, balance: (user.balance || 0) + 45000, phone });
-    await sendText(from, `✅ Welcome! You've been registered and received a $45,000 starter bonus!\n\nUse .p to see your profile.\nYou can log into the website using your phone number: *${phone}*`);
+    await sendText(from,
+      `✅ *Welcome to Tenku 天空!*\n\n` +
+      `You've been registered and received a *$45,000* starter bonus!\n\n` +
+      `📱 Your number: *+${phone}*\n\n` +
+      `Use *.p* to view your profile.\n` +
+      `Use *.bal* to check your balance.\n` +
+      `🌐 Log in at the website with your number.`
+    );
     return;
   }
 
@@ -939,6 +945,10 @@ async function getProfileAvatar(ctx: CommandContext, targetId: string, user: any
       const res = await fetch(url);
       if (res.ok) return Buffer.from(await res.arrayBuffer());
     }
+  } catch {}
+  const defaultPpPath = path.resolve(new URL(import.meta.url).pathname, "../../assets/default_pp.jpg");
+  try {
+    return await fs.readFile(defaultPpPath);
   } catch {}
   return sharp({
     create: {

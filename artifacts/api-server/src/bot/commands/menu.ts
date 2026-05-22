@@ -10,161 +10,139 @@ export async function handleMenu(ctx: CommandContext): Promise<void> {
   const { from, sender, sock } = ctx;
   const senderPhone = sender.split("@")[0]?.split(":")[0] || sender;
 
-  const menuText = `╭━━━〔 天空 • TENKU 〕━━━⬣
-┃
-┃ ✦ User     : @${senderPhone}
-┃ ✦ Bot      : Tenku
-┃ ✦ Creator  : Natsuki
-┃ ✦ Prefix   : [ . ]
-┃
-┣━━━〔 📋 MAIN 〕━━━⬣
-┃ • .menu
-┃ • .ping
-┃ • .website
-┃ • .community
-┃ • .afk
-┃ • .help
-┃ • .info
-┃ • .uptime
-┃
-┣━━━〔 ⚙️ ADMIN 〕━━━⬣
-┃ • .kick
-┃ • .delete
-┃ • .antilink
-┃ • .antilink set [action]
-┃ • .warn @user [reason]
-┃ • .resetwarn
-┃ • .groupinfo / .gi
-┃ • .welcome on/off
-┃ • .setwelcome
-┃ • .leave on/off
-┃ • .setleave
-┃ • .promote
-┃ • .demote
-┃ • .mute
-┃ • .unmute
-┃ • .hidetag
-┃ • .tagall
-┃ • .activity
-┃ • .active
-┃ • .inactive
-┃ • .open
-┃ • .close
-┃ • .purge [code]
-┃ • .antism on/off
-┃ • .blacklist add [word]
-┃ • .blacklist remove [word]
-┃ • .blacklist list
-┃ • .groupstats / .gs
-┃
-┣━━━〔 💰 ECONOMY 〕━━━⬣
-┃ • .bal / .balance
-┃ • .gems
-┃ • .premiumbal / .pbal
-┃ • .premium / .prem
-┃ • .membership / .memb
-┃ • .daily
-┃ • .withdraw / .wid [amount]
-┃ • .deposit / .dep [amount]
-┃ • .donate [amount]
-┃ • .lottery
-┃ • .lp
-┃ • .richlist
-┃ • .richlistglobal / .richlg
-┃ • .register / .reg
-┃ • .setname <name>
-┃ • .setpp
-┃ • .setbg
-┃ • .profile / .p
-┃ • .bio [bio]
-┃ • .setage [age]
-┃ • .inventory / .inv
-┃ • .use [item]
-┃ • .sell [item]
-┃ • .buy [item]
-┃ • .shop
-┃ • .leaderboard / .lb
-┃ • .work
-┃ • .dig
-┃ • .fish
-┃ • .beg
-┃ • .roast
-┃ • .cds
-┃ • .stats
-┃ • .lc
-┃ • .bc
-┃
-┣━━━〔 🎴 CARDS 〕━━━⬣
-┃ • .collection / .coll
-┃ • .deck
-┃ • .sdi
-┃ • .card [index]
-┃ • .cardinfo / .ci
-┃ • .mycollectionseries
-┃ • .cardleaderboard
-┃ • .cardshop
-┃ • .get [id]
-┃ • .stardust
-┃ • .vs @user
-┃ • .auction
-┃ • .myauc
-┃ • .listauc
-┃ • .cg @user
-┃ • .spawncard
-┃ • .ctd
-┃ • .lcd
-┃ • .retrieve
-┃ • .sellc
-┃ • .tc
-┃ • .accept / .decline
-┃
-┣━━━〔 🎮 GAMES 〕━━━⬣
-┃ • .tictactoe / .ttt
-┃ • .connectfour / .c4
-┃ • .wcg
-┃ • .wordchain
-┃ • .startbattle
-┃ • .truthordare / .td
-┃ • .stopgame
-┃
-┣━━━〔 🃏 UNO 〕━━━⬣
-┃ • .uno
-┃ • .startuno
-┃ • .unoplay
-┃ • .unodraw
-┃ • .unohand
-┃
-┣━━━〔 🎲 GAMBLE 〕━━━⬣
-┃ • .slots
-┃ • .dice
-┃ • .casino
-┃ • .coinflip / .cf
-┃ • .doublebet
-┃ • .doublepayout
-┃ • .roulette
-┃ • .horse
-┃ • .spin
-┃
-┣━━━〔 👤 INTERACTION 〕━━━⬣
-┃ • .hug
-┃ • .kiss
-┃ • .slap
-┃ • .wave
-┃ • .pat
-┃ • .dance
-┃ • .sad
-┃ • .smile
-┃ • .laugh
-┃ • .punch
-┃ • .kill
-┃ • .hit
-┃ • .kidnap
-┃ • .lick
-┃ • .bonk
-┃ • .tickle
-┃ • .shrug
-┃
-╰━━━〔 🌌 The sky is not the limit — it is the beginning. 天空 〕━━━⬣`;
+  const menuText =
+`┌─⟡ 『 𝗧𝗘𝗡𝗞𝗨 天空 』⟡
+║
+║ ┌──────────────────────
+║ ║ 👋 𝗛𝗲𝘆       : @${senderPhone}
+║ ║ 🌌 𝗕𝗼𝘁       : Tenku
+║ ║ 👑 𝗖𝗿𝗲𝗮𝘁𝗼𝗿  : Natsuki
+║ ║ 🔹 𝗣𝗿𝗲𝗳𝗶𝘅   : [ . ]
+║ └──────────────────────
+║
+╠─⟡ 📋 𝗠𝗔𝗜𝗡
+║ ┌──────────────────────
+║ ║ ➩ .menu
+║ ║ ➩ .ping
+║ ║ ➩ .website
+║ ║ ➩ .community
+║ ║ ➩ .bots
+║ ║ ➩ .afk
+║ ║ ➩ .help / .info
+║ ║ ➩ .uptime
+║ └──────────────────────
+║
+╠─⟡ ⚙️ 𝗔𝗗𝗠𝗜𝗡
+║ ┌──────────────────────
+║ ║ ➩ .kick
+║ ║ ➩ .delete
+║ ║ ➩ .antilink set [action]
+║ ║ ➩ .warn @user [reason]
+║ ║ ➩ .resetwarn
+║ ║ ➩ .groupinfo / .gi
+║ ║ ➩ .welcome on/off
+║ ║ ➩ .setwelcome / .setleave
+║ ║ ➩ .promote / .demote
+║ ║ ➩ .mute / .unmute
+║ ║ ➩ .hidetag / .tagall
+║ ║ ➩ .open / .close
+║ ║ ➩ .purge [code]
+║ ║ ➩ .antism on/off
+║ ║ ➩ .blacklist add/remove/list
+║ ║ ➩ .groupstats / .gs
+║ └──────────────────────
+║
+╠─⟡ 💰 𝗘𝗖𝗢𝗡𝗢𝗠𝗬
+║ ┌──────────────────────
+║ ║ ➩ .bal / .balance
+║ ║ ➩ .gems / .premiumbal
+║ ║ ➩ .premium / .membership
+║ ║ ➩ .daily
+║ ║ ➩ .withdraw / .deposit
+║ ║ ➩ .donate [amount]
+║ ║ ➩ .richlist / .richlg
+║ ║ ➩ .register / .reg
+║ ║ ➩ .setname <name>
+║ ║ ➩ .setpp / .setbg
+║ ║ ➩ .profile / .p
+║ ║ ➩ .bio [text] / .setage [age]
+║ ║ ➩ .inventory / .shop / .buy
+║ ║ ➩ .leaderboard / .lb
+║ ║ ➩ .work / .dig / .fish / .beg
+║ ║ ➩ .steal / .roast
+║ ║ ➩ .stats / .cds
+║ └──────────────────────
+║
+╠─⟡ 🎴 𝗖𝗔𝗥𝗗𝗦
+║ ┌──────────────────────
+║ ║ ➩ .collection / .coll
+║ ║ ➩ .deck / .sdi
+║ ║ ➩ .card [index]
+║ ║ ➩ .cardinfo / .ci <name>
+║ ║ ➩ .si <name>
+║ ║ ➩ .slb <series>
+║ ║ ➩ .mycollectionseries
+║ ║ ➩ .cardleaderboard / .cardlb
+║ ║ ➩ .cardshop / .stardust
+║ ║ ➩ .get [id]
+║ ║ ➩ .vs @user
+║ ║ ➩ .auction / .myauc
+║ ║ ➩ .listauc / .bid [id] [amt]
+║ ║ ➩ .cg @user
+║ ║ ➩ .ctd / .lcd / .retrieve
+║ ║ ➩ .sellc / .tc
+║ ║ ➩ .accept / .decline
+║ └──────────────────────
+║
+╠─⟡ 🎮 𝗚𝗔𝗠𝗘𝗦
+║ ┌──────────────────────
+║ ║ ➩ .tictactoe / .ttt
+║ ║ ➩ .connectfour / .c4
+║ ║ ➩ .wcg / .wordchain
+║ ║ ➩ .startbattle
+║ ║ ➩ .truthordare / .td
+║ ║ ➩ .stopgame
+║ └──────────────────────
+║
+╠─⟡ 🃏 𝗨𝗡𝗢
+║ ┌──────────────────────
+║ ║ ➩ .uno / .startuno
+║ ║ ➩ .unoplay / .unodraw
+║ ║ ➩ .unohand
+║ └──────────────────────
+║
+╠─⟡ 🎲 𝗚𝗔𝗠𝗕𝗟𝗘
+║ ┌──────────────────────
+║ ║ ➩ .slots / .dice / .casino
+║ ║ ➩ .coinflip / .cf
+║ ║ ➩ .doublebet / .doublepayout
+║ ║ ➩ .roulette / .horse / .spin
+║ └──────────────────────
+║
+╠─⟡ 🎭 𝗙𝗨𝗡
+║ ┌──────────────────────
+║ ║ ➩ .fancy <1-35> <text>
+║ ║ ➩ .gay / .lesbian / .simp
+║ ║ ➩ .match / .ship / .relation
+║ ║ ➩ .character / .psize / .pp
+║ ║ ➩ .skill / .duality / .gen
+║ ║ ➩ .pov / .social
+║ ║ ➩ .wouldyourather / .wyr
+║ ║ ➩ .joke
+║ └──────────────────────
+║
+╠─⟡ 👤 𝗜𝗡𝗧𝗘𝗥𝗔𝗖𝗧𝗜𝗢𝗡
+║ ┌──────────────────────
+║ ║ ➩ .hug / .kiss / .slap
+║ ║ ➩ .wave / .pat / .dance
+║ ║ ➩ .sad / .smile / .laugh
+║ ║ ➩ .punch / .kill / .hit
+║ ║ ➩ .kidnap / .lick / .bonk
+║ ║ ➩ .tickle / .shrug
+║ └──────────────────────
+║
+╚══════════════════════════╝
+  🌌 _The sky is not the limit — it is the beginning. 天空_`;
 
   try {
     const db = getDb();
