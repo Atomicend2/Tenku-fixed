@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tenku
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile=false && pnpm --filter @workspace/shadow-garden run build && pnpm --filter @workspace/api-server run build
+    startCommand: pnpm --filter @workspace/api-server run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: BOT_PHONE_NUMBER
+        sync: false
+      - key: OWNER_NUMBERS
+        sync: false

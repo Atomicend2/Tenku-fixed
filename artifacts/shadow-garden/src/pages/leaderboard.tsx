@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export default function Leaderboard() {
   const { isAuthenticated } = useAuth();
   const { data: leaderboard, isLoading } = useGetLeaderboard();
-  const { data: myRank } = useGetMyRank({ query: { enabled: isAuthenticated } });
+  const { data: myRank } = useGetMyRank({ query: { enabled: isAuthenticated } as any });
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-5xl mx-auto space-y-8">
@@ -42,7 +42,7 @@ export default function Leaderboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leaderboard.entries.map((entry) => (
+                {leaderboard.entries.map((entry: any) => (
                   <TableRow 
                     key={entry.userId} 
                     className={cn(

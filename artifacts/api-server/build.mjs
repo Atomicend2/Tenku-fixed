@@ -3,7 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { copyFile, rm } from "node:fs/promises";
+import { copyFile, rm, cp } from "node:fs/promises";
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -128,6 +130,17 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     path.resolve(artifactDir, "src/bot/menu-image.jpg"),
     path.resolve(distDir, "menu-image.jpg")
   );
+
+  const frontendSrc = path.resolve(artifactDir, "../../artifacts/shadow-garden/dist/public");
+  const frontendDist = path.resolve(distDir, "public");
+
+  if (existsSync(frontendSrc)) {
+    console.log("Copying frontend build to dist/public...");
+    await cp(frontendSrc, frontendDist, { recursive: true });
+    console.log("Frontend copied successfully.");
+  } else {
+    console.warn("Frontend build not found at", frontendSrc, "- skipping copy. Run shadow-garden build first.");
+  }
 }
 
 buildAll().catch((err) => {

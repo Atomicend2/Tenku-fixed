@@ -293,7 +293,7 @@ export async function connectToWhatsApp(phoneNumber?: string, options: ConnectOp
 
   sock.ev.on("group-participants.update", async (update) => {
     try {
-      await handleGroupParticipantsUpdate(sock!, update);
+      await handleGroupParticipantsUpdate(sock!, update as any);
     } catch (err) {
       logger.error({ err }, "Error handling group participants update");
     }

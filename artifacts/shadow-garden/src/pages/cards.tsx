@@ -29,10 +29,10 @@ export default function Cards() {
   });
 
   const { data: myCards, isLoading: loadingMy } = useGetMyCards({
-    query: { enabled: isAuthenticated },
+    query: { enabled: isAuthenticated } as any,
   });
 
-  const filteredAllCards = allCards?.cards.filter((c) =>
+  const filteredAllCards = allCards?.cards.filter((c: any) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.series.toLowerCase().includes(search.toLowerCase())
   );
@@ -93,7 +93,7 @@ export default function Cards() {
             </div>
           ) : filteredAllCards && filteredAllCards.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredAllCards.map((card) => <CardDisplay key={card.id} card={card} />)}
+              {filteredAllCards.map((card: any) => <CardDisplay key={card.id} card={card} />)}
             </div>
           ) : (
             <Empty text="No cards found. Upload cards via bot with .upload command." />
@@ -108,7 +108,7 @@ export default function Cards() {
             </div>
           ) : myCards?.cards && myCards.cards.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {myCards.cards.map((uc) => <CardDisplay key={uc.userCardId} card={uc.card} showOwned />)}
+              {myCards.cards.map((uc: any) => <CardDisplay key={uc.userCardId} card={uc.card} showOwned />)}
             </div>
           ) : (
             <Empty icon={<CreditCard className="w-8 h-8 text-muted-foreground" />} text="No cards collected yet. Use bot commands to claim spawned cards." />

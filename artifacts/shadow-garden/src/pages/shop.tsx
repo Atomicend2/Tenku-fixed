@@ -15,7 +15,7 @@ export default function Shop() {
   const queryClient = useQueryClient();
 
   const { data: shopData, isLoading: loadingShop } = useGetShopItems();
-  const { data: userStats } = useGetUserStats({ query: { enabled: isAuthenticated } });
+  const { data: userStats } = useGetUserStats({ query: { enabled: isAuthenticated } as any });
   const { data: lotteryData, isLoading: lotteryLoading } = useGetLotteryState();
 
   const buyItemMutation = useBuyShopItem({
@@ -89,7 +89,7 @@ export default function Shop() {
           </div>
         ) : shopData?.categories ? (
           <div className="space-y-16">
-            {shopData.categories.filter(c => c.name !== "lottery").map((category) => (
+            {shopData.categories.filter((c: any) => c.name !== "lottery").map((category: any) => (
               <div key={category.name}>
                 <div className="flex items-center gap-4 mb-8">
                   <h2 className="font-serif text-2xl font-bold text-white capitalize tracking-widest">
@@ -109,7 +109,7 @@ export default function Shop() {
                       <Landmark className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm text-blue-300 font-semibold mb-1">Bank Note System</p>
-                        <p className="text-xs text-muted-foreground">Purchasing a Bank Note permanently increases your maximum bank storage capacity. Higher denomination notes grant more storage space. Your current bank max: <span className="text-blue-400 font-bold">{userStats?.profile?.bankMax?.toLocaleString?.() ?? "50,000"}</span></p>
+                        <p className="text-xs text-muted-foreground">Purchasing a Bank Note permanently increases your maximum bank storage capacity. Higher denomination notes grant more storage space. Your current bank max: <span className="text-blue-400 font-bold">{(userStats?.profile as any)?.bankMax?.toLocaleString?.() ?? "50,000"}</span></p>
                       </div>
                     </div>
                   </div>
@@ -134,7 +134,7 @@ export default function Shop() {
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {category.items.map(item => (
+                  {category.items.map((item: any) => (
                     <ShopItemCard
                       key={item.id}
                       item={item}

@@ -36,7 +36,7 @@ export default function Guilds() {
         </div>
       ) : data?.guilds && data.guilds.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.guilds.map((guild) => (
+          {data.guilds.map((guild: any) => (
             <div key={guild.id} className="glass-card bg-black/40 border-white/10 rounded-xl p-6 group hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4 group-hover:bg-primary/10 transition-colors" />
               

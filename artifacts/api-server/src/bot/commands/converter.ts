@@ -43,7 +43,7 @@ export async function handleConverter(ctx: CommandContext): Promise<void> {
         target = msg;
       }
 
-      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage });
+      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage } as any);
       const input = Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded as any);
       let webp: Buffer;
 
@@ -92,7 +92,7 @@ export async function handleConverter(ctx: CommandContext): Promise<void> {
         },
         message: quotedMsg,
       };
-      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage });
+      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage } as any);
       const input = Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded as any);
       const imgBuf = await sharp(input).png().toBuffer();
       const meta = await sharp(imgBuf).metadata();
@@ -141,7 +141,7 @@ export async function handleConverter(ctx: CommandContext): Promise<void> {
         },
         message: quoted,
       };
-      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage });
+      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage } as any);
       const buf = Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded as any);
       await sock.sendMessage(from, { image: buf, caption: "Here's your image! 🖼️" });
     } catch {
@@ -170,15 +170,13 @@ export async function handleConverter(ctx: CommandContext): Promise<void> {
         },
         message: quoted,
       };
-      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage });
+      const downloaded = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage } as any);
       const input = Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded as any);
       const renamed = addWebpExif(input, packName, stickerName);
       await sock.sendMessage(from, {
         sticker: renamed,
-        packname: packName,
-        author: stickerName,
         mimetype: "image/webp",
-      });
+      } as any);
     } catch (err) {
       logger.error({ err }, "Failed to rename sticker");
       await sendText(from, "❌ Failed to rename sticker.");

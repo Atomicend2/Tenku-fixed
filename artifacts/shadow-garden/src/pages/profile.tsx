@@ -16,9 +16,9 @@ export default function Profile() {
     return null;
   }
 
-  const { data: stats, isLoading: statsLoading } = useGetUserStats({ query: { enabled: isAuthenticated } });
-  const { data: inventoryData, isLoading: invLoading } = useGetUserInventory({ query: { enabled: isAuthenticated } });
-  const { data: achievementsData, isLoading: achLoading } = useGetUserAchievements({ query: { enabled: isAuthenticated } });
+  const { data: stats, isLoading: statsLoading } = useGetUserStats({ query: { enabled: isAuthenticated } as any });
+  const { data: inventoryData, isLoading: invLoading } = useGetUserInventory({ query: { enabled: isAuthenticated } as any });
+  const { data: achievementsData, isLoading: achLoading } = useGetUserAchievements({ query: { enabled: isAuthenticated } as any });
 
   const progressPercentage = stats ? (stats.profile.xp / stats.xpNeeded) * 100 : 0;
 
@@ -70,7 +70,7 @@ export default function Profile() {
               </div>
               <div className="bg-black/40 p-3 rounded-lg border border-white/5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1"><Ticket className="w-3 h-3 text-amber-400"/> Lottery Tickets</p>
-                <p className="text-xl font-bold text-amber-400">{stats?.profile.lotteryTickets ?? 0}</p>
+                <p className="text-xl font-bold text-amber-400">{(stats?.profile as any)?.lotteryTickets ?? 0}</p>
               </div>
             </div>
 
@@ -158,7 +158,7 @@ export default function Profile() {
               </div>
             ) : inventoryData?.items && inventoryData.items.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {inventoryData.items.map((item, i) => (
+                {inventoryData.items.map((item: any, i: number) => (
                   <div key={i} className="bg-black/40 border border-white/10 rounded-lg p-4 flex flex-col items-center justify-center relative group hover:border-primary/50 transition-colors">
                     <span className="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-6 text-center shadow-[0_0_10px_rgba(168,85,247,0.5)]">
                       {item.quantity}
@@ -201,7 +201,7 @@ export default function Profile() {
               </div>
             ) : achievementsData?.achievements && achievementsData.achievements.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {achievementsData.achievements.map((ach) => (
+                {achievementsData.achievements.map((ach: any) => (
                   <div key={ach.id} className="bg-black/40 border border-white/10 rounded-lg p-4 flex items-center gap-4 hover:bg-white/5 transition-colors">
                     <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(168,85,247,0.3)] shrink-0">
                       {ach.icon}

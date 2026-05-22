@@ -993,7 +993,7 @@ async function getCommandProfileMedia(ctx: CommandContext): Promise<{ buffer: Bu
     target as any,
     "buffer",
     {},
-    { reuploadRequest: (sock as any).updateMediaMessage }
+    { reuploadRequest: (sock as any).updateMediaMessage } as any
   );
   return { buffer: Buffer.isBuffer(downloaded) ? downloaded : Buffer.from(downloaded as any), type };
 }

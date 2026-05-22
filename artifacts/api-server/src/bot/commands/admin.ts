@@ -297,7 +297,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     const all = participants.map((p: any) => p.id);
     const text = args.join(" ") || "📢 Announcement";
     // Delete the command message silently
-    await sock.sendMessage(from, { delete: msg.key }).catch(() => {});
+    await sock.sendMessage(from, { delete: msg.key! }).catch(() => {});
     // Send the message with all mentions (hidden tag)
     await sock.sendMessage(from, { text, mentions: all });
     return;

@@ -1,5 +1,6 @@
 import type { CommandContext } from "./index.js";
 import { sendText, sendImage } from "../connection.js";
+import { logger } from "../../lib/logger.js";
 import {
   getUserCards, getCard, giveCard, transferCard, lendCard, retrieveCard, getLentCards,
   getUserCard, getDeck, addToDeck, removeFromDeck, clearDeck, getCardLeaderboard,
@@ -242,7 +243,8 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
 
   if (cmd === "stardust") {
     const cards = getUserCards(sender);
-    const dust = cards.reduce((acc, c) => acc + ({"T1":5,"T2":10,"T3":25,"T4":50,"T5":100,"TS":250,"TX":500}[c.tier] || 5), 0);
+    const tierDustMap: Record<string, number> = {"T1":5,"T2":10,"T3":25,"T4":50,"T5":100,"TS":250,"TX":500};
+    const dust = cards.reduce((acc, c) => acc + (tierDustMap[c.tier] || 5), 0);
     await sendText(from, `✨ Your stardust value: *${dust} SD*\n(Based on ${cards.length} cards)`);
     return;
   }
@@ -417,7 +419,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const target = quotedMsg?.imageMessage
         ? { key: { remoteJid: from, fromMe: false, id: ctxInfo?.stanzaId || "", participant: ctxInfo?.participant }, message: quotedMsg }
         : msg;
-      const buffer = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage });
+      const buffer = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage } as any);
       const imageBase64 = (Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer as any)).toString("base64");
 
       const geminiRes = await fetch(
