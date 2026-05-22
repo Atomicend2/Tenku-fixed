@@ -496,6 +496,20 @@ function initSchema(db: Database.Database): void {
   ensureColumn(db, "word_chain", "word_deadline", "INTEGER DEFAULT 0");
   ensureColumn(db, "word_chain", "eliminated", "TEXT DEFAULT '[]'");
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS frames (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      theme TEXT DEFAULT 'custom',
+      svg TEXT,
+      image BLOB,
+      uploaded_by TEXT NOT NULL DEFAULT 'system',
+      created_at INTEGER DEFAULT (unixepoch())
+    );
+  `);
+
+  ensureColumn(db, "users", "frame_id", "INTEGER DEFAULT NULL");
+
 }
 
 function ensureColumn(db: Database.Database, table: string, column: string, definition: string): void {

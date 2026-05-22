@@ -4,7 +4,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: pnpm install --frozen-lockfile=false && pnpm --filter @workspace/shadow-garden run build && pnpm --filter @workspace/api-server run build
+    buildCommand: pnpm install --frozen-lockfile=false && pnpm --filter @workspace/api-server run build
     startCommand: pnpm --filter @workspace/api-server run start
     envVars:
       - key: NODE_ENV

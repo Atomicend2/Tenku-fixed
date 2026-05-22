@@ -3,7 +3,7 @@ import { BOT_OWNER_LID, sendText } from "../connection.js";
 import {
   getUser, ensureUser, updateUser, getInventory, addToInventory, removeFromInventory,
   getShop, getShopItem, getRichList, ensureRpg, getUserRank, getUserGuild, isBanned, getStaff, isMod,
-  getXpLeaderboard, isBot,
+  getXpLeaderboard, isBot, getAllFrames, getFrameById, equipFrame,
 } from "../db/queries.js";
 import { getDb } from "../db/database.js";
 import { formatNumber, timeAgo } from "../utils.js";
@@ -411,6 +411,42 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     } else {
       await ctx.sock.sendMessage(from, { text, mentions: [targetId] });
     }
+    return;
+  }
+
+  if (cmd === "frame") {
+    if (!args[0]) {
+      const frames = getAllFrames();
+      if (frames.length === 0) {
+        await sendText(from, "❌ No frames available yet.");
+        return;
+      }
+      const target = ensureUser(sender);
+      const equippedId = (target as any).frame_id;
+      const list = frames.map((f: any) => {
+        const tag = f.id === equippedId ? " ✅" : "";
+        return `${f.id}. *${f.name}*${tag} [${f.theme}]`;
+      }).join("\n");
+      await sendText(from, `🖼️ *Available Frames*\n\n${list}\n\nUse *.frame <id>* to equip a frame.\nUse *.frame 0* to remove your frame.`);
+      return;
+    }
+    const frameId = parseInt(args[0], 10);
+    if (isNaN(frameId)) {
+      await sendText(from, "❌ Usage: .frame <id> — Use .frame with no args to see the list.");
+      return;
+    }
+    if (frameId === 0) {
+      equipFrame(sender, null);
+      await sendText(from, "✅ Frame removed.");
+      return;
+    }
+    const frame = getFrameById(frameId);
+    if (!frame) {
+      await sendText(from, `❌ Frame #${frameId} not found. Use *.frame* to see the list.`);
+      return;
+    }
+    equipFrame(sender, frameId);
+    await sendText(from, `✅ Frame *${frame.name}* equipped! Your profile card now uses this frame.`);
     return;
   }
 
@@ -859,12 +895,33 @@ async function buildProfileImage(ctx: CommandContext, targetId: string, user: an
   const background = user.profile_background && Buffer.isBuffer(user.profile_background)
     ? user.profile_background
     : defaultBgPath;
+
+  let frameBuffer: Buffer | null = null;
+  if (user.frame_id) {
+    try {
+      const db = getDb();
+      const frame = db.prepare("SELECT * FROM frames WHERE id = ?").get(user.frame_id) as any;
+      if (frame) {
+        if (frame.image && Buffer.isBuffer(frame.image) && frame.image.length > 0) {
+          frameBuffer = await sharp(frame.image).resize(220, 220).png().toBuffer();
+        } else if (frame.svg) {
+          frameBuffer = await sharp(Buffer.from(frame.svg)).resize(220, 220).png().toBuffer();
+        }
+      }
+    } catch {}
+  }
+
+  const composites: Parameters<ReturnType<typeof sharp>["composite"]>[0] = [
+    { input: circularAvatar, left: 287, top: 146 },
+    { input: overlay, left: 0, top: 0 },
+  ];
+  if (frameBuffer) {
+    composites.push({ input: frameBuffer, left: 272, top: 131 });
+  }
+
   return sharp(background)
     .resize(width, height, { fit: "cover" })
-    .composite([
-      { input: circularAvatar, left: 287, top: 146 },
-      { input: overlay, left: 0, top: 0 },
-    ])
+    .composite(composites)
     .jpeg({ quality: 92 })
     .toBuffer();
 }

@@ -8,6 +8,7 @@ import { guildsRouter } from "./guilds.js";
 import { lotteryRouter } from "./lottery.js";
 import { communityRouter } from "./community.js";
 import { adminRouter } from "./admin.js";
+import { framesRouter } from "./frames.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/guilds", guildsRouter);
 router.use("/lottery", lotteryRouter);
 router.use("/community", communityRouter);
 router.use("/admin", adminRouter);
+router.use("/frames", framesRouter);
 
 export { router as v1Router };

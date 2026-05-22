@@ -4,12 +4,15 @@ import { useGetUserStats, useGetUserInventory, useGetUserAchievements } from "@w
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Wallet, Landmark, Shield, Swords, Zap, Activity, Ticket } from "lucide-react";
+import { Trophy, Wallet, Landmark, Shield, Swords, Zap, Activity, Ticket, Layers, Upload, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react/src/custom-fetch";
+import { useRef, useState } from "react";
 
 export default function Profile() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, token } = useAuth();
 
   if (!isAuthenticated) {
     setLocation("/login");
@@ -88,7 +91,7 @@ export default function Profile() {
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="w-full justify-start border-b border-primary/20 bg-transparent rounded-none h-auto p-0 mb-6 gap-6 overflow-x-auto">
-          {["Overview", "Inventory", "Pets", "Achievements"].map((tab) => (
+          {["Overview", "Inventory", "Frames", "Pets", "Achievements"].map((tab) => (
             <TabsTrigger 
               key={tab.toLowerCase()} 
               value={tab.toLowerCase()}
@@ -179,6 +182,10 @@ export default function Profile() {
           </div>
         </TabsContent>
 
+        <TabsContent value="frames">
+          <FramesTab token={token} userRole={(user as any)?.role} />
+        </TabsContent>
+
         <TabsContent value="pets">
           <div className="glass-card rounded-xl p-12 border border-white/10 flex flex-col items-center justify-center text-center">
             <div className="w-24 h-24 rounded-full bg-black/50 border border-white/10 flex items-center justify-center mb-6">
@@ -222,6 +229,194 @@ export default function Profile() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+const THEME_COLORS: Record<string, string> = {
+  celestial: "border-sky-500/60 shadow-[0_0_18px_rgba(14,165,233,0.35)]",
+  sakura:    "border-pink-500/60 shadow-[0_0_18px_rgba(236,72,153,0.35)]",
+  samurai:   "border-amber-500/60 shadow-[0_0_18px_rgba(251,191,36,0.35)]",
+  neon:      "border-purple-500/60 shadow-[0_0_18px_rgba(168,85,247,0.35)]",
+  dragon:    "border-red-500/60 shadow-[0_0_18px_rgba(239,68,68,0.35)]",
+  custom:    "border-white/30 shadow-[0_0_12px_rgba(255,255,255,0.1)]",
+};
+
+function FramesTab({ token, userRole }: { token: string | null; userRole?: string }) {
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadName, setUploadName] = useState("");
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const isStaff = userRole === "owner" || userRole === "guardian" || userRole === "mod" || userRole === "staff";
+
+  const { data: framesData, isLoading: framesLoading } = useQuery({
+    queryKey: ["frames"],
+    queryFn: () => customFetch<{ success: boolean; frames: any[] }>("/api/v1/frames"),
+  });
+
+  const { data: myFrameData } = useQuery({
+    queryKey: ["my-frame"],
+    queryFn: () => customFetch<{ success: boolean; frame: any }>("/api/v1/frames/me"),
+    enabled: !!token,
+  });
+
+  const equipMutation = useMutation({
+    mutationFn: (frameId: number | null) =>
+      customFetch<{ success: boolean; message: string }>("/api/v1/frames/equip", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ frameId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-frame"] });
+    },
+  });
+
+  const handleUpload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file || !uploadName.trim()) {
+      setUploadStatus("Please enter a name and select a PNG file.");
+      return;
+    }
+    const form = new FormData();
+    form.append("frame", file);
+    form.append("name", uploadName.trim());
+    form.append("theme", "custom");
+    try {
+      setUploadStatus("Uploading...");
+      const res = await fetch("/api/v1/frames/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const json = await res.json();
+      if (json.success) {
+        setUploadStatus("Frame uploaded!");
+        setUploadName("");
+        if (fileRef.current) fileRef.current.value = "";
+        queryClient.invalidateQueries({ queryKey: ["frames"] });
+      } else {
+        setUploadStatus(json.message || "Upload failed.");
+      }
+    } catch {
+      setUploadStatus("Upload failed.");
+    }
+  };
+
+  const equippedId = myFrameData?.frame?.id ?? null;
+  const frames: any[] = framesData?.frames ?? [];
+
+  return (
+    <div className="space-y-6">
+      <div className="glass-card rounded-xl p-6 border border-white/10">
+        <div className="flex items-center justify-between mb-6 border-b border-primary/15 pb-4">
+          <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+            <Layers className="w-5 h-5 text-primary" />
+            Profile Frames
+          </h3>
+          {equippedId !== null && (
+            <button
+              onClick={() => equipMutation.mutate(null)}
+              disabled={equipMutation.isPending}
+              className="text-xs text-muted-foreground hover:text-white border border-white/10 hover:border-white/30 px-3 py-1.5 rounded-md transition-colors"
+            >
+              Remove Frame
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-6">
+          Choose a frame to display around your profile picture when others view your card with <span className="font-mono text-primary">.p</span> in the bot.
+        </p>
+
+        {framesLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-48 bg-white/5 animate-pulse rounded-xl" />)}
+          </div>
+        ) : frames.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground">No frames available yet.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {frames.map((frame: any) => {
+              const isEquipped = frame.id === equippedId;
+              const themeClass = THEME_COLORS[frame.theme] ?? THEME_COLORS.custom;
+              return (
+                <button
+                  key={frame.id}
+                  onClick={() => !isEquipped && equipMutation.mutate(frame.id)}
+                  disabled={equipMutation.isPending}
+                  className={cn(
+                    "relative group flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200",
+                    isEquipped
+                      ? `bg-black/60 ${themeClass}`
+                      : "bg-black/30 border-white/10 hover:border-white/30 hover:bg-black/50"
+                  )}
+                >
+                  {isEquipped && (
+                    <CheckCircle2 className="absolute top-2 right-2 w-4 h-4 text-green-400" />
+                  )}
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-black/50 border border-white/10 flex items-center justify-center">
+                    <img
+                      src={`/api/v1/frames/${frame.id}/image`}
+                      alt={frame.name}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-white leading-tight">{frame.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{frame.theme}</p>
+                  </div>
+                  {isEquipped ? (
+                    <span className="text-xs text-green-400 font-semibold">Equipped</span>
+                  ) : (
+                    <span className="text-xs text-primary/70 group-hover:text-primary transition-colors">Equip</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {isStaff && (
+        <div className="glass-card rounded-xl p-6 border border-amber-500/20">
+          <h3 className="font-serif text-lg font-bold text-amber-400 flex items-center gap-2 mb-4">
+            <Upload className="w-4 h-4" />
+            Upload New Frame
+            <span className="text-xs font-sans font-normal text-amber-400/60 ml-1">(Staff Only)</span>
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Upload a 220×220 PNG with a transparent center circle. The frame ring should be in the outer ~30px.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={uploadName}
+              onChange={e => setUploadName(e.target.value)}
+              placeholder="Frame name (e.g. Sakura Storm)"
+              className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-amber-500/50"
+            />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-amber-500/40 file:bg-amber-500/10 file:text-amber-400 file:text-xs file:cursor-pointer"
+            />
+            <button
+              onClick={handleUpload}
+              className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap"
+            >
+              Upload Frame
+            </button>
+          </div>
+          {uploadStatus && (
+            <p className={cn("mt-3 text-sm", uploadStatus.includes("!") ? "text-green-400" : "text-muted-foreground")}>
+              {uploadStatus}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

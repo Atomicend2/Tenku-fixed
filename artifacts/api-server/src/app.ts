@@ -36,8 +36,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-const publicDir = path.join(__dirname, "public");
-if (fs.existsSync(publicDir)) {
+const publicDirCandidates = [
+  path.join(__dirname, "public"),
+  path.join(process.cwd(), "dist", "public"),
+  path.join(process.cwd(), "artifacts", "api-server", "dist", "public"),
+];
+const publicDir = publicDirCandidates.find((d) => fs.existsSync(d));
+
+if (publicDir) {
   app.use(express.static(publicDir));
   app.get("*", (_req, res) => {
     res.sendFile(path.join(publicDir, "index.html"));

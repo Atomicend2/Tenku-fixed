@@ -1143,3 +1143,39 @@ export function clearAllPlayerData() {
     }
   })();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Frames
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function getAllFrames() {
+  const db = getDb();
+  return db.prepare("SELECT id, name, theme, svg, uploaded_by, created_at FROM frames ORDER BY id ASC").all() as any[];
+}
+
+export function getFrameById(id: number) {
+  const db = getDb();
+  return db.prepare("SELECT * FROM frames WHERE id = ?").get(id) as any;
+}
+
+export function addFrame(name: string, theme: string, svg: string | null, image: Buffer | null, uploadedBy: string): number {
+  const db = getDb();
+  const result = db.prepare(
+    "INSERT INTO frames (name, theme, svg, image, uploaded_by) VALUES (?, ?, ?, ?, ?)"
+  ).run(name, theme, svg, image, uploadedBy);
+  return Number(result.lastInsertRowid);
+}
+
+export function equipFrame(userId: string, frameId: number | null) {
+  const db = getDb();
+  const phone = extractNumberFromJid(userId);
+  db.prepare("UPDATE users SET frame_id = ? WHERE id = ?").run(frameId, phone);
+}
+
+export function getUserEquippedFrame(userId: string) {
+  const db = getDb();
+  const phone = extractNumberFromJid(userId);
+  return db.prepare(
+    "SELECT f.* FROM frames f JOIN users u ON u.frame_id = f.id WHERE u.id = ?"
+  ).get(phone) as any;
+}
