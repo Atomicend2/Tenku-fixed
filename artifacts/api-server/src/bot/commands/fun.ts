@@ -214,84 +214,95 @@ const JOKES = [
   "Life's too short to worry. Life's also too short not to worry. Make up your mind, life. 😤",
 ];
 
-// 20 anime-inspired Unicode font styles for .fancy command
-const FANCY_STYLES: Array<(t: string) => string> = [
-  // 1. Bold sans-serif
-  (t) => t.split("").map(c => "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇0123456789"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".indexOf(c)] || c).join(""),
-  // 2. Sans-serif italic
-  (t) => t.split("").map(c => "𝘈𝘉𝘊𝘋𝘌𝘍𝘎𝘏𝘐𝘑𝘒𝘓𝘔𝘕𝘖𝘗𝘘𝘙𝘚𝘛𝘜𝘝𝘞𝘟𝘠𝘡𝘢𝘣𝘤𝘥𝘦𝘧𝘨𝘩𝘪𝘫𝘬𝘭𝘮𝘯𝘰𝘱𝘲𝘳𝘴𝘵𝘶𝘷𝘸𝘹𝘺𝘻"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 3. Monospace
-  (t) => t.split("").map(c => "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 4. Bold script / cursive
-  (t) => t.split("").map(c => "𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝓨𝓩𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 5. Fraktur
-  (t) => t.split("").map(c => "𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 6. Bold fraktur / Gothic bold
-  (t) => t.split("").map(c => "𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 7. Double-struck
-  (t) => t.split("").map(c => "𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 8. Bold serif
-  (t) => t.split("").map(c => "𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 9. Italic serif
-  (t) => t.split("").map(c => "𝐴𝐵𝐶𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾𝐿𝑀𝑁𝑂𝑃𝑄𝑅𝑆𝑇𝑈𝑉𝑊𝑋𝑌𝑍𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 10. Bold italic serif
-  (t) => t.split("").map(c => "𝑨𝑩𝑪𝑫𝑬𝑭𝑮𝑯𝑰𝑱𝑲𝑳𝑴𝑵𝑶𝑷𝑸𝑹𝑺𝑻𝑼𝑽𝑾𝑿𝒀𝒁𝒂𝒃𝒄𝒅𝒆𝒇𝒈𝒉𝒊𝒋𝒌𝒍𝒎𝒏𝒐𝒑𝒒𝒓𝒔𝒕𝒖𝒗𝒘𝒙𝒚𝒛"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 11. Sans-serif
-  (t) => t.split("").map(c => "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 12. Bold italic sans-serif
-  (t) => t.split("").map(c => "𝘼𝘽𝘾𝘿𝙀𝙁𝙂𝙃𝙄𝙅𝙆𝙇𝙈𝙉𝙊𝙋𝙌𝙍𝙎𝙏𝙐𝙑𝙒𝙓𝙔𝙕𝙖𝙗𝙘𝙙𝙚𝙛𝙜𝙝𝙞𝙟𝙠𝙡𝙢𝙣𝙤𝙥𝙦𝙧𝙨𝙩𝙪𝙫𝙬𝙭𝙮𝙯"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
-  // 13. Fullwidth
-  (t) => t.split("").map(c => "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
-  // 14. Circled letters
-  (t) => t.split("").map(c => "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
-  // 15. Negative squared / bold box letters
-  (t) => t.toUpperCase().split("").map(c => {
-    const idx = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c);
-    return idx >= 0 ? "🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩"[idx] : c;
-  }).join(""),
-  // 16. Small caps
-  (t) => t.split("").map(c => ({ a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"Q",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" }[c.toLowerCase()] || c)).join(""),
-  // 17. Subscript
-  (t) => t.split("").map(c => ({ a:"ₐ",e:"ₑ",h:"ₕ",i:"ᵢ",j:"ⱼ",k:"ₖ",l:"ₗ",m:"ₘ",n:"ₙ",o:"ₒ",p:"ₚ",r:"ᵣ",s:"ₛ",t:"ₜ",u:"ᵤ",v:"ᵥ",x:"ₓ",0:"₀",1:"₁",2:"₂",3:"₃",4:"₄",5:"₅",6:"₆",7:"₇",8:"₈",9:"₉" }[c.toLowerCase()] || c)).join(""),
-  // 18. Superscript
-  (t) => t.split("").map(c => ({ a:"ᴬ",b:"ᴮ",c:"ᶜ",d:"ᴰ",e:"ᴱ",f:"ᶠ",g:"ᴳ",h:"ᴴ",i:"ᴵ",j:"ᴶ",k:"ᴷ",l:"ᴸ",m:"ᴹ",n:"ᴺ",o:"ᴼ",p:"ᴾ",r:"ᴿ",s:"ˢ",t:"ᵀ",u:"ᵁ",v:"ⱽ",w:"ᵂ",0:"⁰",1:"¹",2:"²",3:"³",4:"⁴",5:"⁵",6:"⁶",7:"⁷",8:"⁸",9:"⁹" }[c] || c.toLowerCase() === c ? ({ a:"ᵃ",b:"ᵇ",c:"ᶜ",d:"ᵈ",e:"ᵉ",f:"ᶠ",g:"ᵍ",h:"ʰ",i:"ⁱ",j:"ʲ",k:"ᵏ",l:"ˡ",m:"ᵐ",n:"ⁿ",o:"ᵒ",p:"ᵖ",r:"ʳ",s:"ˢ",t:"ᵗ",u:"ᵘ",v:"ᵛ",w:"ʷ",x:"ˣ",y:"ʸ",z:"ᶻ" }[c] || c) : c)).join(""),
-  // 19. Upside down
-  (t) => t.split("").map(c => ({ a:"ɐ",b:"q",c:"ɔ",d:"p",e:"ǝ",f:"ɟ",g:"ƃ",h:"ɥ",i:"ı",j:"ɾ",k:"ʞ",l:"l",m:"ɯ",n:"u",o:"o",p:"d",q:"b",r:"ɹ",s:"s",t:"ʇ",u:"n",v:"ʌ",w:"ʍ",x:"x",y:"ʎ",z:"z",A:"∀",B:"ᗺ",C:"Ɔ",D:"ᗡ",E:"Ǝ",F:"Ⅎ",G:"פ",H:"H",I:"I",J:"ɾ",K:"ʞ",L:"˥",M:"W",N:"N",O:"O",P:"Ԁ",Q:"Q",R:"ᴚ",S:"S",T:"ʇ",U:"∩",V:"ʌ",W:"M",X:"X",Y:"⅄",Z:"Z" }[c] || c)).reverse().join(""),
-  // 20. Aesthetic (cyrillic mix)
-  (t) => t.split("").map(c => ({ h:"н",e:"є",l:"ℓ",o:"σ",a:"α",b:"в",c:"¢",d:"∂",f:"f",g:"g",i:"ι",j:"נ",k:"к",m:"м",n:"η",p:"ρ",q:"q",r:"я",s:"ѕ",t:"т",u:"υ",v:"ν",w:"ω",x:"χ",y:"у",z:"z" }[c.toLowerCase()] || c)).join(""),
-  // 21. Spaced uppercase
-  (t) => t.toUpperCase().split("").join(" "),
-  // 22. Alternating case
-  (t) => t.split("").map((c, i) => i % 2 === 0 ? c.toUpperCase() : c.toLowerCase()).join(""),
-  // 23. Reversed
-  (t) => t.split("").reverse().join(""),
-  // 24. Keycap emoji
-  (t) => [...t].map(c => c + "\u20e3").join(""),
-  // 25. Regional indicator flags
-  (t) => t.toUpperCase().split("").map(c => {
-    const idx = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c);
-    return idx >= 0 ? String.fromCodePoint(0x1F1E6 + idx) : c;
-  }).join(""),
-  // 26. Strikethrough
-  (t) => t.split("").map(c => c + "\u0336").join(""),
-  // 27. Underline
-  (t) => t.split("").map(c => c + "\u0332").join(""),
-  // 28. ꧁༺ wrap
-  (t) => "꧁༺ " + t + " ༻꧂",
-  // 29. 『 』 brackets
-  (t) => "『 " + t + " 』",
-  // 30. 「 」 brackets
-  (t) => "「 " + t + " 」",
-  // 31. 【 】 brackets
-  (t) => "【 " + t + " 】",
-  // 32. ✦ spaced
-  (t) => "✦ " + t.split("").join(" ") + " ✦",
-  // 33. dot separator
-  (t) => "∙̣̇" + t.split("").join("∙") + "∙̣̇",
-  // 34. 🌸 separator
-  (t) => "🌸 " + t.split("").join(" 🌸 ") + " 🌸",
-  // 35. Star wrap
-  (t) => "★彡 " + t + " 彡★",
+// Named fancy styles for .fancy command
+const FANCY_STYLES: Array<{ name: string; fn: (t: string) => string }> = [
+  // ─── Fantasy / Ancient ────────────────────────────────────────
+  {
+    name: "Typewriter Thin",
+    fn: (t) => t.split("").map(c => "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Fantasy Capital",
+    fn: (t) => t.toUpperCase().split("").map(c => ({"A":"Æ","B":"ß","C":"Ç","D":"Ð","E":"È","F":"Ƒ","G":"Ğ","H":"Ħ","I":"Ì","J":"Ĵ","K":"Ķ","L":"Ł","M":"Μ","N":"Ñ","O":"Ø","P":"Þ","Q":"Ω","R":"Ȑ","S":"Ś","T":"Ŧ","U":"Ü","V":"Ʋ","W":"Ψ","X":"Χ","Y":"Ÿ","Z":"Ž"}[c] || c)).join(""),
+  },
+  {
+    name: "Samurai",
+    fn: (t) => t.toUpperCase().split("").map(c => ({"A":"卂","B":"乃","C":"匚","D":"ᗪ","E":"乇","F":"千","G":"Ꮆ","H":"卄","I":"丨","J":"ﾌ","K":"Ҝ","L":"ㄥ","M":"爪","N":"几","O":"ㄖ","P":"卩","Q":"Ɋ","R":"尺","S":"丂","T":"ㄒ","U":"ㄩ","V":"ᐯ","W":"山","X":"乂","Y":"ㄚ","Z":"乙"}[c] || c)).join(""),
+  },
+  // ─── Gothic / Dark ────────────────────────────────────────────
+  {
+    name: "Monospace",
+    fn: (t) => t.split("").map(c => "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Gothic",
+    fn: (t) => t.split("").map(c => "𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Dark King",
+    fn: (t) => t.split("").map(c => "𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Runic",
+    fn: (t) => t.toUpperCase().split("").map(c => ({"A":"ᚨ","B":"ᛒ","C":"ᚲ","D":"ᛞ","E":"ᛖ","F":"ᚠ","G":"ᚷ","H":"ᚺ","I":"ᛁ","J":"ᛃ","K":"ᚲ","L":"ᛚ","M":"ᛗ","N":"ᚾ","O":"ᛟ","P":"ᛈ","Q":"ᛩ","R":"ᚱ","S":"ᛊ","T":"ᛏ","U":"ᚢ","V":"ᚡ","W":"ᚹ","X":"ᛪ","Y":"ᛇ","Z":"ᛉ"}[c] || c)).join(""),
+  },
+  {
+    name: "Old Script",
+    fn: (t) => t.split("").map(c => "𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Blackletter",
+    fn: (t) => t.split("").map(c => "𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  // ─── Cute / Soft ──────────────────────────────────────────────
+  {
+    name: "Bubble",
+    fn: (t) => t.toUpperCase().split("").map(c => {
+      const idx = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c);
+      return idx >= 0 ? "🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩"[idx] : c;
+    }).join(""),
+  },
+  {
+    name: "Tiny Caps",
+    fn: (t) => t.split("").map(c => ({"a":"ᴀ","b":"ʙ","c":"ᴄ","d":"ᴅ","e":"ᴇ","f":"ꜰ","g":"ɢ","h":"ʜ","i":"ɪ","j":"ᴊ","k":"ᴋ","l":"ʟ","m":"ᴍ","n":"ɴ","o":"ᴏ","p":"ᴘ","q":"Q","r":"ʀ","s":"s","t":"ᴛ","u":"ᴜ","v":"ᴠ","w":"ᴡ","x":"x","y":"ʏ","z":"ᴢ"}[c.toLowerCase()] || c)).join(""),
+  },
+  {
+    name: "Rounded",
+    fn: (t) => t.split("").map(c => "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Soft Wide",
+    fn: (t) => t.split("").map(c => "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)] || c).join(""),
+  },
+  // ─── Hacker / Celestial ───────────────────────────────────────
+  {
+    name: "Glitch",
+    fn: (t) => t.split("").map(c => c + "\u0334").join(""),
+  },
+  {
+    name: "Celestial",
+    fn: (t) => t.split("").map(c => "𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Holy Script",
+    fn: (t) => t.split("").map(c => "𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "Ethereal",
+    fn: (t) => t.split("").map(c => "𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝓨𝓩𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃"["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)] || c).join(""),
+  },
+  {
+    name: "ZigZag Font",
+    fn: (t) => t.split("").map(c => ({"a":"α","b":"в","c":"ς","d":"∂","e":"є","f":"ƒ","g":"ɢ","h":"н","i":"ι","j":"נ","k":"к","l":"ℓ","m":"м","n":"η","o":"σ","p":"ρ","q":"ϑ","r":"я","s":"ѕ","t":"т","u":"υ","v":"ν","w":"ω","x":"χ","y":"у","z":"ζ","A":"Λ","B":"ß","C":"Ç","D":"Ð","E":"Σ","F":"Ƒ","G":"Ğ","H":"Η","I":"Ī","J":"Ĵ","K":"Ҝ","L":"Ł","M":"Μ","N":"И","O":"Ω","P":"Ρ","Q":"Θ","R":"Я","S":"Ş","T":"Τ","U":"Ц","V":"Ψ","W":"Ш","X":"Χ","Y":"Ч","Z":"Ζ"}[c] || c)).join(""),
+  },
+  {
+    name: "Д Cyrillic Mix Д",
+    fn: (t) => t.toUpperCase().split("").map(c => ({"A":"А","B":"В","C":"С","D":"Д","E":"Е","F":"Ғ","G":"Г","H":"Н","I":"И","J":"Ĵ","K":"К","L":"Л","M":"М","N":"И","O":"О","P":"Р","Q":"Ω","R":"Я","S":"Ş","T":"Т","U":"У","V":"Ѵ","W":"Ш","X":"Х","Y":"Ч","Z":"З"}[c] || c)).join(""),
+  },
+  {
+    name: "Inverted Squares",
+    fn: (t) => t.toUpperCase().split("").map(c => ({"A":"🅰","B":"🅱","C":"🅲","D":"🅳","E":"🅴","F":"🅵","G":"🅶","H":"🅷","I":"🅸","J":"🅹","K":"🅺","L":"🅻","M":"🅼","N":"🅽","O":"🅾","P":"🅿","Q":"🆀","R":"🆁","S":"🆂","T":"🆃","U":"🆄","V":"🆅","W":"🆆","X":"🆇","Y":"🆈","Z":"🆉"}[c] || c)).join(""),
+  },
 ];
 
 const SOCIALS = [
@@ -446,24 +457,26 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
     const text = args.slice(1).join(" ");
     const total = FANCY_STYLES.length;
     if (!args[0] || isNaN(styleNum) || !text) {
-      const allPreviews = FANCY_STYLES.map((fn, i) => `${String(i + 1).padStart(2, "0")}. ${fn("Hello")}`).join("\n");
+      const allPreviews = FANCY_STYLES.map((style, i) =>
+        `${String(i + 1).padStart(2, "0")}. ${style.name}\n    ${style.fn("Tenku")}`
+      ).join("\n");
       await sendText(from,
         `┌─⟡ 🎭 𝗙𝗔𝗡𝗖𝗬 𝗧𝗘𝗫𝗧 𝗦𝗧𝗬𝗟𝗘𝗦\n║\n` +
         `║ ➩ Usage: .fancy <1-${total}> <text>\n` +
-        `║ ➩ Example: .fancy 4 Hello\n` +
+        `║ ➩ Example: .fancy 3 Shadow King\n` +
         `╠─────────────────────\n` +
-        `║ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗦𝗧𝗬𝗟𝗘𝗦:\n` +
-        `║\n` +
+        `║ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗦𝗧𝗬𝗟𝗘𝗦:\n║\n` +
         allPreviews.split("\n").map(l => `║ ${l}`).join("\n") + "\n" +
         `╚══════════════════════╝`
       );
       return;
     }
     const idx = Math.max(1, Math.min(total, styleNum)) - 1;
-    const styled = FANCY_STYLES[idx](text);
+    const style = FANCY_STYLES[idx];
+    const styled = style.fn(text);
     await sendText(from,
       `┌─⟡ 🎭 𝗙𝗔𝗡𝗖𝗬 𝗧𝗘𝗫𝗧\n` +
-      `║ ➩ Style ${styleNum}/${total}\n` +
+      `║ ➩ Style ${styleNum}: ${style.name}\n` +
       `╠─────────────────────\n` +
       `║\n` +
       `║ ${styled}\n` +

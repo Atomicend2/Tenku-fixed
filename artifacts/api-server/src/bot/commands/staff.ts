@@ -1,5 +1,5 @@
 import type { CommandContext } from "./index.js";
-import { BOT_OWNER_LID, sendText } from "../connection.js";
+import { BOT_OWNER_LID, sendText, isSocketConnected } from "../connection.js";
 import { addStaff, removeStaff, getStaffList, getStaff, ensureUser, getUser, updateUser, getCard, getAllCards, addBan, removeBan, getBanList, setBotSetting, deleteBotSetting, resetUserBalance, resetUserProfile, isBanned } from "../db/queries.js";
 import { getTierEmoji, isValidTier, generateId, IMAGE_TIERS, VIDEO_TIERS } from "../utils.js";
 import { INTERACTION_NAMES, uploadInteractionGif } from "./interactions.js";
@@ -76,8 +76,14 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
 
   if (cmd === "mods" || cmd === "modlist") {
     const staff = getStaffList();
-    const mods = staff.filter((s) => s.role === "mod");
-    const guardians = staff.filter((s) => s.role === "guardian");
+    const ownerPhone = BOT_OWNER_LID.replace(/\D/g, "");
+    const ownerJid = `${ownerPhone}@s.whatsapp.net`;
+    const isOwnerEntry = (s: any) =>
+      s.user_id === ownerJid ||
+      s.user_id.startsWith(ownerPhone + "@") ||
+      s.user_id.startsWith(ownerPhone + ":");
+    const mods = staff.filter((s) => s.role === "mod" && !isOwnerEntry(s));
+    const guardians = staff.filter((s) => s.role === "guardian" && !isOwnerEntry(s));
     const mentions = [...mods, ...guardians].map((s) => s.user_id);
     const modLines = mods.length > 0 ? mods.map((s) => `╰┈➤ @${s.user_id.split("@")[0]}`).join("\n") : "╰┈➤ None yet";
     const guardianLines = guardians.length > 0 ? guardians.map((s) => `╰┈➤ @${s.user_id.split("@")[0]}`).join("\n") : "╰┈➤ None yet";
@@ -279,7 +285,11 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
   }
 
   if (cmd === "post") {
-    if (!isOwner) { await sendText(from, "❌ Only the owner can use .post."); return; }
+    const postRole = staffRecord?.role;
+    if (!isOwner && postRole !== "mod" && postRole !== "guardian") {
+      await sendText(from, "❌ Only mods, guardians, and the owner can use .post.");
+      return;
+    }
     const text = args.join(" ");
     if (!text) { await sendText(from, "❌ Usage: .post [message]"); return; }
     const db = getDb();
@@ -355,14 +365,20 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
 
   if (cmd === "bots") {
     const db = getDb();
-    const bots = db.prepare("SELECT name, status, phone FROM bots ORDER BY created_at ASC").all() as any[];
+    const bots = db.prepare("SELECT name, status, phone, is_primary FROM bots ORDER BY created_at ASC").all() as any[];
     if (bots.length === 0) {
       await sendText(from, "🪽 *TENKU BOTS* 🪽\n\n_No bots registered yet._");
       return;
     }
     const lines = bots.map((b) => {
-      const active = b.status === "open" || b.status === "connected";
-      return `${active ? "🟢" : "🔴"} ${b.name}`;
+      let online: boolean;
+      if (b.is_primary) {
+        online = isSocketConnected();
+      } else {
+        online = b.status === "connected" || b.status === "open";
+      }
+      const phone = b.phone ? ` (+${b.phone})` : "";
+      return `${online ? "🟢" : "🔴"} ${b.name}${phone}`;
     }).join("\n");
     await sendText(from, `🪽 *TENKU BOTS* 🪽\n\n${lines}`);
     return;

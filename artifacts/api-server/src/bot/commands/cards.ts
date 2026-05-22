@@ -421,24 +421,33 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const imageBase64 = (Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer as any)).toString("base64");
 
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{
               parts: [
-                { text: "This is an anime trading card. Extract: 1) Character/card name, 2) Series/anime name, 3) Tier (T1-T6, TS, TX, or TZ — if not visible guess from art quality: simple=T1, legendary=T6). Reply ONLY as JSON: {\"name\":\"...\",\"series\":\"...\",\"tier\":\"T?\"}" },
+                {
+                  text: `Analyze this anime trading card image. Return ONLY a raw JSON object with no markdown, no code fences, no explanation. Format: {"name":"character name","series":"anime/series name","tier":"T1"}. Tier must be one of: T1 T2 T3 T4 T5 T6 TS TX TZ. Guess tier from art quality: sketchy/simple=T1, detailed=T3, cinematic=T5, legendary/god-tier=T6 TS TX TZ. Return ONLY the JSON object.`
+                },
                 { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }
               ]
-            }]
+            }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
           }),
         }
       );
       const geminiData = await geminiRes.json() as any;
-      const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No JSON in response");
+      if (geminiData?.error) throw new Error(geminiData.error.message || "Gemini API error");
+      const rawText = (geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+      // Strip markdown code fences if present
+      const stripped = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        logger.error({ rawText, geminiData }, "Gemini returned no JSON");
+        throw new Error(`No JSON in response. Got: "${rawText.slice(0, 100)}"`);
+      }
       const parsed = JSON.parse(jsonMatch[0]);
 
       // Store pending upload using bot_settings
