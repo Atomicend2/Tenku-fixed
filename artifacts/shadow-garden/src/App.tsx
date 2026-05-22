@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 // Pages
 import Home from "@/pages/home";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import Profile from "@/pages/profile";
 import Shop from "@/pages/shop";
 import Cards from "@/pages/cards";
@@ -32,6 +33,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
         <Route path="/profile" component={Profile} />
         <Route path="/shop" component={Shop} />
         <Route path="/cards" component={Cards} />

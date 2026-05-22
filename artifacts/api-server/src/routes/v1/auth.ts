@@ -66,7 +66,8 @@ router.post("/otp/send", async (req, res) => {
   if (!user) {
     res.status(404).json({
       success: false,
-      message: "This phone number is not registered with Tenku. Join the WhatsApp group and use .register first.",
+      message: "Phone number not found. Please register on the website first.",
+      registerRedirect: true,
     });
     return;
   }
@@ -97,6 +98,73 @@ router.post("/otp/send", async (req, res) => {
   }
 
   res.json({ success: true, message: "OTP sent to your WhatsApp" });
+});
+
+router.post("/register", async (req, res) => {
+  const { phone, name } = req.body as { phone?: string; name?: string };
+
+  if (!phone || !name) {
+    res.status(400).json({ success: false, message: "Phone number and name are required" });
+    return;
+  }
+
+  const normalized = normalizePhone(phone);
+  if (!normalized) {
+    res.status(400).json({ success: false, message: "Invalid phone number format" });
+    return;
+  }
+
+  const trimmedName = name.trim();
+  if (trimmedName.length < 2) {
+    res.status(400).json({ success: false, message: "Name must be at least 2 characters" });
+    return;
+  }
+
+  const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
+  const jid = `${normalized}@s.whatsapp.net`;
+
+  const existing = getUserByPhone(normalized);
+  if (existing && existing.registered) {
+    res.status(409).json({
+      success: false,
+      message: "This number is already registered. Please log in instead.",
+      loginRedirect: true,
+    });
+    return;
+  }
+
+  if (!existing) {
+    db.prepare(
+      "INSERT OR IGNORE INTO users (id, name, phone, registered, registered_at, created_at, balance) VALUES (?, ?, ?, 1, ?, ?, 45000)"
+    ).run(jid, trimmedName, normalized, now, now);
+  } else {
+    db.prepare(
+      "UPDATE users SET name = ?, phone = ?, registered = 1, registered_at = ? WHERE id = ?"
+    ).run(trimmedName, normalized, now, existing.id);
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = now + OTP_EXPIRY_SECONDS;
+  db.prepare("INSERT OR REPLACE INTO web_otps (phone, code, expires_at) VALUES (?, ?, ?)").run(normalized, code, expiresAt);
+
+  const sock = getSocket();
+  if (sock && isSocketConnected()) {
+    try {
+      await sock.sendMessage(jid, {
+        text: `*Tenku 天空* — Welcome, ${trimmedName}!\n\nYour registration code:\n\n*${code}*\n\nExpires in 5 minutes. Don't share this code.`,
+      });
+    } catch (err) {
+      logger.error({ err }, "Failed to send registration OTP");
+      res.status(500).json({ success: false, message: "Failed to send OTP via WhatsApp. Bot may be offline." });
+      return;
+    }
+  } else {
+    res.status(500).json({ success: false, message: "Bot is currently offline. Please try again later." });
+    return;
+  }
+
+  res.json({ success: true, message: "Account created! Check your WhatsApp for the verification code." });
 });
 
 router.post("/otp/verify", (req, res) => {

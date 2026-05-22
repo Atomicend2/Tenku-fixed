@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useSendOtp, useVerifyOtp } from "@workspace/api-client-react/src/generated/api";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -26,13 +26,23 @@ export default function Login() {
           description: "Check your WhatsApp for the access code from the Tenku bot.",
         });
       },
-      onError: (error) => {
+      onError: (error: any) => {
+        const data = error?.data as any;
+        if (data?.registerRedirect) {
+          toast({
+            title: "Not Registered",
+            description: "This number isn't in our system. Redirecting to registration...",
+            variant: "destructive",
+          });
+          setTimeout(() => setLocation("/register"), 1500);
+          return;
+        }
         toast({
           title: "Error",
           description: error.message || "Failed to send code. Please try again.",
           variant: "destructive",
         });
-      }
+      },
     }
   });
 
@@ -164,9 +174,18 @@ export default function Login() {
               </form>
             )}
           </CardContent>
-          <CardFooter className="justify-center border-t border-primary/10 pt-6">
+          <CardFooter className="flex flex-col gap-2 items-center border-t border-primary/10 pt-6">
             <p className="text-xs text-muted-foreground">
-              Not a member? <a href="https://chat.whatsapp.com/IZi7UphEO9O76lY8dFYUYn?mode=gi_t" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Join Tenku 天空</a>
+              New here?{" "}
+              <Link href="/register" className="text-primary hover:underline font-semibold">
+                Create an account
+              </Link>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Or{" "}
+              <a href="https://chat.whatsapp.com/IZi7UphEO9O76lY8dFYUYn?mode=gi_t" target="_blank" rel="noopener noreferrer" className="text-primary/70 hover:underline">
+                join the WhatsApp group
+              </a>
             </p>
           </CardFooter>
         </Card>
