@@ -297,6 +297,15 @@ export function deleteUserCardByCopyId(copyId: string, ownerId: string) {
   return row;
 }
 
+export function deleteUserCardByCopyIdAdmin(copyId: string) {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM user_cards WHERE copy_id = ?").get(copyId) as any;
+  if (!row) return null;
+  db.prepare("DELETE FROM card_deck WHERE user_card_id = ?").run(row.id);
+  db.prepare("DELETE FROM user_cards WHERE id = ?").run(row.id);
+  return row;
+}
+
 export function getUserCardByCopyId(copyId: string) {
   const db = getDb();
   return db.prepare("SELECT uc.*, c.name AS card_name, c.tier, c.series FROM user_cards uc JOIN cards c ON c.id = uc.card_id WHERE uc.copy_id = ?").get(copyId) as any;

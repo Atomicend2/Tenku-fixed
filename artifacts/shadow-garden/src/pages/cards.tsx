@@ -215,11 +215,22 @@ function CardDisplay({ card, showOwned }: { card: any; showOwned?: boolean }) {
         {/* Card Image */}
         <div className={cn("relative w-full aspect-[3/4] overflow-hidden", cfg.bg)}>
           {hasImage ? (
-            <img
-              src={card.imageUrl}
-              alt={card.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            card.isAnimated ? (
+              <video
+                src={card.imageUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <img
+                src={card.imageUrl}
+                alt={card.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            )
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-40">
               <ImageOff className="w-8 h-8" />

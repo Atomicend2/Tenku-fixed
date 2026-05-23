@@ -70,11 +70,23 @@ async function runFfmpeg(args: string[]): Promise<void> {
   await execFileAsync("ffmpeg", ["-loglevel", "error", ...args], { maxBuffer: 10 * 1024 * 1024 });
 }
 
+const REGISTERED_ONLY_CMDS = new Set([
+  "daily","work","dig","fish","beg","steal","donate",
+  "richlist","richlistglobal","richlg","leaderboard","lb","stats",
+  "buy","sell","use","withdraw","wid","wd","deposit","dep","roast",
+  "shop",
+]);
+
 export async function handleEconomy(ctx: CommandContext): Promise<void> {
   const { from, sender, args, command: cmd } = ctx;
 
   const user = ensureUser(sender);
   const now = Math.floor(Date.now() / 1000);
+
+  if (REGISTERED_ONLY_CMDS.has(cmd) && !user.registered) {
+    await sendText(from, "❌ You need to complete registration first.\n\nType *.reg* to register via WhatsApp, or visit the website to register and verify with OTP.");
+    return;
+  }
 
   if (cmd === "balance" || cmd === "bal") {
     const displayName = user.name || sender.split("@")[0];
@@ -250,7 +262,6 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
         text += `• \`${c.emoji} ${c.name}\`— \`${formatDuration(rem)}\` left\n`;
       }
     }
-    text += `\n> *Wait until cooldown ends to use these commands again or contact mods/guardians for premium (20% cooldown reduction)*`;
     await sendText(from, text);
     return;
   }

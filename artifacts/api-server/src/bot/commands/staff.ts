@@ -188,7 +188,11 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
   }
 
   if (cmd === "addrole" || cmd === "removerole") {
-    if (!isOwner) { await sendText(from, "❌ Only the bot owner can manage bot roles."); return; }
+    const addroleRole = staffRecord?.role;
+    if (!isOwner && addroleRole !== "mod" && addroleRole !== "guardian") {
+      await sendText(from, "❌ Only the bot owner, mods, and guardians can manage bot roles.");
+      return;
+    }
     const role = args[0]?.toLowerCase();
     if (role !== "otp") {
       await sendText(from, "❌ Available roles: *otp*\nUsage: .addrole otp <phone/botId>\n.removerole otp <phone/botId>");

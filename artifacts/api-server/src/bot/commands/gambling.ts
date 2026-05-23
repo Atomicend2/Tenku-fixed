@@ -15,7 +15,10 @@ export async function handleGambling(ctx: CommandContext): Promise<void> {
     const result = spin();
     const multiplier = checkSlotWin(result);
     const slots = result.split(" | ");
-    const slotDisplay = slots.map((s) => `⟦ ${s} ⟧`).join(" ");
+    const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "⭐", "💎", "7️⃣"];
+    const randSym = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    const reelRow = () => [randSym(), randSym(), randSym()].map((s) => `⟦ ${s} ⟧`).join("  ");
+    const resultRow = slots.map((s) => `⟦ ${s} ⟧`).join("  ");
     let winnings = 0;
     let outcome = "";
     if (multiplier === 3) {
@@ -30,14 +33,20 @@ export async function handleGambling(ctx: CommandContext): Promise<void> {
     }
     updateUser(sender, gambleUpdate(limit, { balance: (user.balance || 0) + winnings }));
     const msg =
-      `╭─❰ 🎰 ʟᴜᴄᴋ sʟᴏᴛ ❱─╮\n` +
+      `╭─❰ 🎰 𝐒𝐋𝐎𝐓 𝐌𝐀𝐂𝐇𝐈𝐍𝐄 ❱─╮\n` +
       `│\n` +
-      `│  ${slotDisplay}\n` +
+      `│  ${reelRow()}\n` +
+      `│  ${reelRow()}\n` +
+      `│━━━━━━━━━━━━━━━━━━━━━\n` +
+      `│▶ ${resultRow} ◀\n` +
+      `│━━━━━━━━━━━━━━━━━━━━━\n` +
+      `│  ${reelRow()}\n` +
+      `│  ${reelRow()}\n` +
       `│\n` +
       `│  🎲 ʙᴇᴛ: $${formatNumber(amount)}\n` +
       `│  ✨ ᴏᴜᴛᴄᴏᴍᴇ: ${outcome}\n` +
       `│  💰 ʙᴀʟᴀɴᴄᴇ: $${formatNumber((user.balance || 0) + winnings)}\n` +
-      `╰──────────────╯`;
+      `╰──────────────────────╯`;
     await sendText(from, msg);
     return;
   }

@@ -9,6 +9,7 @@ import { getDb } from "./db/database.js";
 import { logger } from "../lib/logger.js";
 import { setActiveSock } from "./connection.js";
 import { handleMessage } from "./handlers/message.js";
+import { handleGroupUpdate, handleGroupParticipantsUpdate } from "./handlers/group.js";
 import fs from "fs";
 import Pino from "pino";
 
@@ -119,6 +120,22 @@ export async function startBot(botId: string): Promise<void> {
       } catch (err) {
         logger.error({ err, botId }, "Managed bot error handling message");
       }
+    }
+  });
+
+  sock.ev.on("group-participants.update", async (update: any) => {
+    try {
+      await handleGroupParticipantsUpdate(sock, update as any);
+    } catch (err) {
+      logger.error({ err, botId }, "Managed bot error handling group participants update");
+    }
+  });
+
+  sock.ev.on("groups.update", async (updates: any) => {
+    try {
+      await handleGroupUpdate(sock, updates);
+    } catch (err) {
+      logger.error({ err, botId }, "Managed bot error handling groups update");
     }
   });
 

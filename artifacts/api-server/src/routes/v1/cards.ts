@@ -6,15 +6,18 @@ import { logger } from "../../lib/logger.js";
 
 const router = Router();
 
-// Serve card image BLOB from the database
+const ANIMATED_TIERS = new Set(["T6", "TS", "TX", "TZ"]);
+
+// Serve card media BLOB from the database (image or video for animated tiers)
 router.get("/:id/image", (req, res) => {
   const db = getDb();
-  const card = db.prepare("SELECT image_data FROM cards WHERE id = ?").get(req.params.id) as any;
+  const card = db.prepare("SELECT image_data, tier FROM cards WHERE id = ?").get(req.params.id) as any;
   if (!card?.image_data) {
     res.status(404).end();
     return;
   }
-  res.setHeader("Content-Type", "image/jpeg");
+  const isAnimated = ANIMATED_TIERS.has(card.tier);
+  res.setHeader("Content-Type", isAnimated ? "video/mp4" : "image/jpeg");
   res.setHeader("Cache-Control", "public, max-age=86400");
   res.send(card.image_data);
 });
@@ -66,6 +69,7 @@ router.get("/", optionalAuth, (req, res) => {
       WHERE uc.card_id = ?
       LIMIT 5
     `).all(card.id) as any[];
+    const isAnimated = ANIMATED_TIERS.has(card.tier);
     return {
       id: card.id,
       name: card.name,
@@ -73,6 +77,7 @@ router.get("/", optionalAuth, (req, res) => {
       series: card.series || "General",
       description: card.description || "",
       imageUrl: card.image_data ? `/api/v1/cards/${card.id}/image` : (card.image_url || ""),
+      isAnimated,
       totalCopies,
       ownerName: owner?.name || "Unclaimed",
       ownerId: owner?.id || null,

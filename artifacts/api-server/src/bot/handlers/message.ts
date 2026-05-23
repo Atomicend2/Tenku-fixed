@@ -294,9 +294,11 @@ async function dispatch(ctx: CommandContext): Promise<void> {
     case "help":
       return handleInfo(ctx);
 
-    case "website":
-      await sendText(from, "🌐 *Tenku 天空 — Official Website*\n\nhttps://tenku.onrender.com\n\n_View your profile, cards, shop, leaderboard and more._");
+    case "website": {
+      const websiteUrl = process.env["WEBSITE_URL"] || "https://tenku.onrender.com";
+      await sendText(from, `🌐 *Tenku 天空 — Official Website*\n\n${websiteUrl}\n\n_View your profile, cards, shop, leaderboard and more._`);
       return;
+    }
 
     case "community":
       await sendText(from, "🌌 *Join Tenku 天空!*\n\nhttps://chat.whatsapp.com/IZi7UphEO9O76lY8dFYUYn?mode=gi_t\n\n_The Heavenly Sky awaits. Ascend._");

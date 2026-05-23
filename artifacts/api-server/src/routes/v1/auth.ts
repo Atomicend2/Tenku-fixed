@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { randomBytes } from "crypto";
 import { getDb } from "../../bot/db/database.js";
-import { getSocket, isSocketConnected } from "../../bot/connection.js";
+import { getAnySock, isSocketConnected } from "../../bot/connection.js";
 import { logger } from "../../lib/logger.js";
 
 const router = Router();
@@ -78,11 +78,11 @@ router.post("/otp/send", async (req, res) => {
   const db = getDb();
   db.prepare("INSERT OR REPLACE INTO web_otps (phone, code, expires_at) VALUES (?, ?, ?)").run(normalized, code, expiresAt);
 
-  const sock = getSocket();
-  if (sock && isSocketConnected()) {
+  const activeSock = getAnySock();
+  if (activeSock && isSocketConnected()) {
     try {
       const jid = `${normalized}@s.whatsapp.net`;
-      await sock.sendMessage(jid, {
+      await activeSock.sendMessage(jid, {
         text: `*Tenku 天空* — Your login code:\n\n*${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
       });
       logger.info({ phone: normalized }, "OTP sent via WhatsApp");
@@ -156,10 +156,10 @@ router.post("/register", async (req, res) => {
   const expiresAt = now + OTP_EXPIRY_SECONDS;
   db.prepare("INSERT OR REPLACE INTO web_otps (phone, code, expires_at) VALUES (?, ?, ?)").run(normalized, code, expiresAt);
 
-  const sock = getSocket();
-  if (sock && isSocketConnected()) {
+  const activeSock = getAnySock();
+  if (activeSock && isSocketConnected()) {
     try {
-      await sock.sendMessage(`${normalized}@s.whatsapp.net`, {
+      await activeSock.sendMessage(`${normalized}@s.whatsapp.net`, {
         text: `*Tenku 天空* — Welcome, ${trimmedName}!\n\nYour registration code:\n\n*${code}*\n\nExpires in 5 minutes. Don't share this code.`,
       });
     } catch (err) {

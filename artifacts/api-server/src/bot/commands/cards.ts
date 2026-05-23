@@ -8,7 +8,7 @@ import {
   updateTradeStatus, createSellOffer, getPendingSellOffer, updateSellOfferStatus,
   getCardOwners, getCardIssueNumber, addCard,
   setBotSetting, getBotSetting, deleteBotSetting,
-  deleteUserCardByCopyId, getUserCardByCopyId,
+  deleteUserCardByCopyId, getUserCardByCopyId, getStaff,
 } from "../db/queries.js";
 import { getTierEmoji, formatNumber, generateId } from "../utils.js";
 import sharp from "sharp";
@@ -683,9 +683,13 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
   }
 
   if (cmd === "deletecard" || cmd === "delcard") {
+    if (!ctx.isOwner && !getStaff(sender)) {
+      await sendText(from, "❌ Only staff can delete cards.");
+      return;
+    }
     const copyId = (args[0] || "").toUpperCase();
     if (!copyId) {
-      await sendText(from, "❌ Usage: .deletecard <copy_id>\nExample: .deletecard AB3K9");
+      await sendText(from, "❌ Usage: .delcard <copy_id>\nExample: .delcard AB3K9");
       return;
     }
     const card = getUserCardByCopyId(copyId);
@@ -693,7 +697,8 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       await sendText(from, `❌ No card found with ID: *${copyId}*`);
       return;
     }
-    const deleted = deleteUserCardByCopyId(copyId, card.user_id);
+    const { deleteUserCardByCopyIdAdmin } = await import("../db/queries.js");
+    const deleted = deleteUserCardByCopyIdAdmin(copyId);
     if (!deleted) {
       await sendText(from, `❌ Could not delete card *${copyId}*.`);
       return;

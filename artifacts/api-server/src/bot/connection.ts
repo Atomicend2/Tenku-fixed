@@ -91,6 +91,10 @@ export function getSocket(): WASocket | null {
   return sock;
 }
 
+export function getAnySock(): WASocket | null {
+  return overrideSock || sock;
+}
+
 export function isSocketConnected(): boolean {
   return overrideConnected || isConnected;
 }
