@@ -78,10 +78,16 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     const staff = getStaffList();
     const ownerPhone = BOT_OWNER_LID.replace(/\D/g, "");
     const ownerJid = `${ownerPhone}@s.whatsapp.net`;
-    const isOwnerEntry = (s: any) =>
-      s.user_id === ownerJid ||
-      s.user_id.startsWith(ownerPhone + "@") ||
-      s.user_id.startsWith(ownerPhone + ":");
+    const isOwnerEntry = (s: any) => {
+      const uid = s.user_id || "";
+      const uidPhone = uid.split("@")[0].split(":")[0].replace(/\D/g, "");
+      return (
+        uid === ownerJid ||
+        uid.startsWith(ownerPhone + "@") ||
+        uid.startsWith(ownerPhone + ":") ||
+        uidPhone === ownerPhone
+      );
+    };
     const mods = staff.filter((s) => s.role === "mod" && !isOwnerEntry(s));
     const guardians = staff.filter((s) => s.role === "guardian" && !isOwnerEntry(s));
     const mentions = [...mods, ...guardians].map((s) => s.user_id);

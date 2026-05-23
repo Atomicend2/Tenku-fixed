@@ -94,7 +94,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         const shown = owners.slice(0, 10);
         ownersSection = shown.map((o) => {
           ownerMentions.push(o.user_id);
-          return `• @${o.user_id.split("@")[0]}`;
+          return `• #${o.issue_num} @${o.user_id.split("@")[0]} [ID:${o.user_card_id}]`;
         }).join("\n");
         if (owners.length > 10) ownersSection += `\n_...and ${owners.length - 10} more_`;
       }
@@ -105,7 +105,8 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         `𝗡𝗮𝗺𝗲: ${found.name}\n` +
         `𝗦𝗲𝗿𝗶𝗲𝘀: ${found.series || "General"}\n` +
         `𝗧𝗶𝗲𝗿: ${found.tier}\n` +
-        `𝗧𝗼𝘁𝗮𝗹 𝗢𝘄𝗻𝗲𝗿𝘀: ${owners.length}\n\n` +
+        `𝗖𝗮𝗿𝗱 𝗜𝗗: ${found.id}\n` +
+        `𝗧𝗼𝘁𝗮𝗹 𝗜𝘀𝘀𝘂𝗲𝘀: ${owners.length}\n\n` +
         `✦────⋆⋅✧⋅⋆────✦\n` +
         `👥 𝗢𝗪𝗡𝗘𝗥𝗦\n` +
         `✦────⋆⋅✧⋅⋆────✦\n\n` +
@@ -123,7 +124,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
           const shown = owners.slice(0, 5);
           ownersSection = shown.map((o) => {
             ownerMentions.push(o.user_id);
-            return `• @${o.user_id.split("@")[0]}`;
+            return `• #${o.issue_num} @${o.user_id.split("@")[0]} [ID:${o.user_card_id}]`;
           }).join("\n");
           if (owners.length > 5) ownersSection += `\n_...and ${owners.length - 5} more_`;
         }
@@ -134,7 +135,8 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
           `𝗡𝗮𝗺𝗲: ${c.name}\n` +
           `𝗦𝗲𝗿𝗶𝗲𝘀: ${c.series || "General"}\n` +
           `𝗧𝗶𝗲𝗿: ${c.tier}\n` +
-          `𝗢𝘄𝗻𝗲𝗿𝘀: ${owners.length}\n\n` +
+          `𝗖𝗮𝗿𝗱 𝗜𝗗: ${c.id}\n` +
+          `𝗧𝗼𝘁𝗮𝗹 𝗜𝘀𝘀𝘂𝗲𝘀: ${owners.length}\n\n` +
           `👥 𝗢𝗪𝗡𝗘𝗥𝗦\n${ownersSection}\n\n` +
           `∘₊✦────────✦₊∘`;
         await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
@@ -423,7 +425,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const imageBase64 = (Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer as any)).toString("base64");
 
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -478,7 +480,9 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const pending = JSON.parse(pendingRaw.toString());
       const imageBuffer = Buffer.from(pending.imageBase64, "base64");
       const resized = await sharp(imageBuffer).resize(900, 1260, { fit: "cover" }).jpeg({ quality: 90 }).toBuffer();
-      const cardId = `card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const { generateUniqueCardId } = await import("../utils.js");
+      const existingIds = new Set((await import("../db/database.js")).getDb().prepare("SELECT id FROM cards").all().map((r: any) => r.id));
+      const cardId = generateUniqueCardId(existingIds);
       await addCard({ id: cardId, name: pending.name, series: pending.series, tier: pending.tier, image_data: resized, uploaded_by: pending.uploadedBy });
       deleteBotSetting(`ubs_pending:${sender}`);
       await sendText(from, `✅ Card *${pending.name}* (${pending.tier}) from *${pending.series}* has been added to the database!`);

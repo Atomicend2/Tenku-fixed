@@ -368,6 +368,7 @@ async function dispatch(ctx: CommandContext): Promise<void> {
     case "daily":
     case "withdraw":
     case "wid":
+    case "wd":
     case "deposit":
     case "dep":
     case "donate":

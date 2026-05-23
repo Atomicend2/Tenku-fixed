@@ -1,6 +1,6 @@
 import type { CommandContext } from "./index.js";
 import { sendText } from "../connection.js";
-import { ensureUser, updateUser } from "../db/queries.js";
+import { ensureUser, extractNumberFromJid } from "../db/queries.js";
 import { getDb } from "../db/database.js";
 import sharp from "sharp";
 
@@ -9,27 +9,27 @@ const AUTO_DRAW_WINNERS = 3;
 
 export async function handleLottery(ctx: CommandContext): Promise<void> {
   const { from, sender, command: cmd } = ctx;
+  const userId = extractNumberFromJid(sender);
   const db = getDb();
 
   if (cmd === "lottery") {
-    const user = ensureUser(sender);
-    const db2 = getDb();
+    ensureUser(sender);
 
-    // Migrate any inventory-based tickets into the column (web purchases land in inventory)
-    const invRow = db2.prepare(
+    // Migrate any inventory-based tickets into the column (web purchases may also land in inventory)
+    const invRow = db.prepare(
       "SELECT quantity FROM inventory WHERE user_id = ? AND LOWER(item) = 'lottery ticket'"
-    ).get(sender) as any;
+    ).get(userId) as any;
     if (invRow?.quantity > 0) {
-      db2.prepare(
+      db.prepare(
         "UPDATE users SET lottery_tickets = COALESCE(lottery_tickets, 0) + ? WHERE id = ?"
-      ).run(invRow.quantity, sender);
-      db2.prepare(
+      ).run(invRow.quantity, userId);
+      db.prepare(
         "DELETE FROM inventory WHERE user_id = ? AND LOWER(item) = 'lottery ticket'"
-      ).run(sender);
+      ).run(userId);
     }
 
     // Re-fetch with migrated count
-    const freshUser = db2.prepare("SELECT * FROM users WHERE id = ?").get(sender) as any;
+    const freshUser = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as any;
     const tickets = freshUser?.lottery_tickets || 0;
     if (tickets <= 0) {
       await sendText(
@@ -49,11 +49,10 @@ export async function handleLottery(ctx: CommandContext): Promise<void> {
     // Check if user is already participating
     const existing = db.prepare(
       "SELECT * FROM lottery_entries WHERE lottery_id = ? AND user_id = ?"
-    ).get(lottery.id, sender) as any;
+    ).get(lottery.id, userId) as any;
 
     if (existing) {
       await sendText(from, "🎰 *Already Entered!*\n\nYou are already in this drawing. Wait for the results!");
-      // Still send the status card
       const image = await buildLotteryImage(lottery.id);
       await ctx.sock.sendMessage(from, {
         image,
@@ -63,8 +62,8 @@ export async function handleLottery(ctx: CommandContext): Promise<void> {
     }
 
     // Deduct 1 ticket and add entry
-    db.prepare("UPDATE users SET lottery_tickets = lottery_tickets - 1 WHERE id = ?").run(sender);
-    db.prepare("INSERT INTO lottery_entries (lottery_id, user_id, amount) VALUES (?, ?, 1)").run(lottery.id, sender, 1);
+    db.prepare("UPDATE users SET lottery_tickets = lottery_tickets - 1 WHERE id = ?").run(userId);
+    db.prepare("INSERT INTO lottery_entries (lottery_id, user_id) VALUES (?, ?)").run(lottery.id, userId);
 
     const entryCount = (db.prepare("SELECT COUNT(*) as cnt FROM lottery_entries WHERE lottery_id = ?").get(lottery.id) as any)?.cnt || 0;
 
@@ -89,17 +88,18 @@ export async function handleLottery(ctx: CommandContext): Promise<void> {
 
   // .ll command — just show the status card
   if (cmd === "ll") {
-    const user = ensureUser(sender);
+    ensureUser(sender);
+    const freshUserLl = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as any;
     const lottery = db.prepare("SELECT * FROM lotteries WHERE active = 1 ORDER BY created_at DESC LIMIT 1").get() as any;
     const entryCount = lottery
       ? ((db.prepare("SELECT COUNT(*) as cnt FROM lottery_entries WHERE lottery_id = ?").get(lottery.id) as any)?.cnt || 0)
       : 0;
 
     const isInLottery = lottery
-      ? !!(db.prepare("SELECT * FROM lottery_entries WHERE lottery_id = ? AND user_id = ?").get(lottery.id, sender))
+      ? !!(db.prepare("SELECT * FROM lottery_entries WHERE lottery_id = ? AND user_id = ?").get(lottery.id, userId))
       : false;
 
-    const tickets = user.lottery_tickets || 0;
+    const tickets = freshUserLl?.lottery_tickets || 0;
     let statusLine = `🎫 Your tickets: *${tickets}*`;
     if (isInLottery) statusLine += "\n✅ You are *already in* this drawing";
 

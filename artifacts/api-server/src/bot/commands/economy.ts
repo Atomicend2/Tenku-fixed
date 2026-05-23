@@ -163,7 +163,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     return;
   }
 
-  if (cmd === "withdraw" || cmd === "wid") {
+  if (cmd === "withdraw" || cmd === "wid" || cmd === "wd") {
     const amount = parseInt(args[0]);
     if (isNaN(amount) || amount <= 0) {
       await sendText(from, "❌ Enter a valid amount. Usage: .withdraw [amount]");
@@ -289,18 +289,15 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
 
   if (cmd === "register" || cmd === "reg") {
     if (user.registered) {
-      await sendText(from, "✅ You're already registered!");
+      await sendText(from, "✅ You're already registered.");
       return;
     }
     const phone = sender.split("@")[0].split(":")[0];
     updateUser(sender, { registered: 1, registered_at: now, balance: (user.balance || 0) + 45000, phone });
     await sendText(from,
-      `✅ *Welcome to Tenku 天空!*\n\n` +
-      `You've been registered and received a *$45,000* starter bonus!\n\n` +
-      `📱 Your number: *+${phone}*\n\n` +
-      `Use *.p* to view your profile.\n` +
-      `Use *.bal* to check your balance.\n` +
-      `🌐 Log in at the website with your number.`
+      `*You're in.*\n\n` +
+      `$45,000 dropped into your wallet.\n\n` +
+      `Type *.p* to see your profile or *.help* for commands.`
     );
     return;
   }
