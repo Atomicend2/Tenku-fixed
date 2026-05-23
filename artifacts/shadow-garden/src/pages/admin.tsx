@@ -379,7 +379,7 @@ function AdminDashboard({ token, base, onLogout, toast }: {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-white truncate">{u.name || "—"}</p>
-                        <p className="text-[10px] text-muted-foreground font-mono">{u.phone || u.id?.split("@")[0]}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{u.display_id ? `#${u.display_id}` : (u.phone || u.id?.split("@")[0])}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -510,7 +510,7 @@ function AdminDashboard({ token, base, onLogout, toast }: {
                         {p.is_banned ? <Ban className="w-3 h-3 text-rose-400 shrink-0" /> : null}
                         {!p.registered ? <span className="text-[9px] text-yellow-400 border border-yellow-400/30 px-1 rounded">unregistered</span> : null}
                       </div>
-                      <p className="text-[10px] text-muted-foreground font-mono">{p.phone || p.id?.split("@")[0]}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">{p.display_id ? `#${p.display_id}` : (p.phone || p.id?.split("@")[0])}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-mono text-sky-400">Lv.{p.level || 1}</span>
@@ -544,7 +544,7 @@ function AdminDashboard({ token, base, onLogout, toast }: {
                           <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded border border-violet-400/30 text-violet-400">{playerDetail?.player?.staff_role || selectedPlayer.role}</span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground font-mono mt-1">{selectedPlayer.phone || selectedPlayer.id?.split("@")[0]}</p>
+                      <p className="text-xs text-muted-foreground font-mono mt-1">{selectedPlayer.display_id ? `#${selectedPlayer.display_id}` : (selectedPlayer.phone || selectedPlayer.id?.split("@")[0])}</p>
                     </div>
                     <button onClick={() => loadPlayerDetail(selectedPlayer.id)} className="p-1.5 rounded text-muted-foreground hover:text-primary transition-colors">
                       <RefreshCw className="w-3.5 h-3.5" />

@@ -509,6 +509,32 @@ function initSchema(db: Database.Database): void {
   `);
 
   ensureColumn(db, "users", "frame_id", "INTEGER DEFAULT NULL");
+  ensureColumn(db, "users", "display_id", "TEXT");
+  ensureColumn(db, "user_cards", "copy_id", "TEXT");
+
+  // Back-fill display_id for any existing users that don't have one yet
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const usersWithoutId = db.prepare("SELECT id FROM users WHERE display_id IS NULL OR display_id = ''").all() as Array<{ id: string }>;
+  const insertDisplayId = db.prepare("UPDATE users SET display_id = ? WHERE id = ?");
+  const usedIds = new Set<string>((db.prepare("SELECT display_id FROM users WHERE display_id IS NOT NULL AND display_id != ''").all() as Array<{ display_id: string }>).map(r => r.display_id));
+  for (const row of usersWithoutId) {
+    let did = "";
+    do { did = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join(""); } while (usedIds.has(did));
+    usedIds.add(did);
+    insertDisplayId.run(did, row.id);
+  }
+
+  // Back-fill copy_id for existing user_cards without one
+  const cardsWithoutCopyId = db.prepare("SELECT id FROM user_cards WHERE copy_id IS NULL OR copy_id = ''").all() as Array<{ id: number }>;
+  const updateCopyId = db.prepare("UPDATE user_cards SET copy_id = ? WHERE id = ?");
+  const usedCopyIds = new Set<string>((db.prepare("SELECT copy_id FROM user_cards WHERE copy_id IS NOT NULL AND copy_id != ''").all() as Array<{ copy_id: string }>).map(r => r.copy_id));
+  const cpChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  for (const row of cardsWithoutCopyId) {
+    let cid = "";
+    do { cid = Array.from({ length: 5 }, () => cpChars[Math.floor(Math.random() * cpChars.length)]).join(""); } while (usedCopyIds.has(cid));
+    usedCopyIds.add(cid);
+    updateCopyId.run(cid, row.id);
+  }
 
 }
 

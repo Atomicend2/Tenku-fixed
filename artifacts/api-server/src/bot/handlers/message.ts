@@ -467,6 +467,8 @@ async function dispatch(ctx: CommandContext): Promise<void> {
     case "decline":
     case "ss":
     case "sc":
+    case "deletecard":
+    case "delcard":
       return handleCards(ctx);
 
     case "tictactoe":

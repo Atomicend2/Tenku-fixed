@@ -90,9 +90,18 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     };
     const mods = staff.filter((s) => s.role === "mod" && !isOwnerEntry(s));
     const guardians = staff.filter((s) => s.role === "guardian" && !isOwnerEntry(s));
-    const mentions = [...mods, ...guardians].map((s) => s.user_id);
-    const modLines = mods.length > 0 ? mods.map((s) => `╰┈➤ @${s.user_id.split("@")[0]}`).join("\n") : "╰┈➤ None yet";
-    const guardianLines = guardians.length > 0 ? guardians.map((s) => `╰┈➤ @${s.user_id.split("@")[0]}`).join("\n") : "╰┈➤ None yet";
+    const mentions = [...mods, ...guardians].map((s) => {
+      const uid = s.user_id || "";
+      return uid.includes("@") ? uid : `${uid}@s.whatsapp.net`;
+    });
+    const displayName = (s: any) => {
+      const u = getUser(s.user_id);
+      if (u?.name && u.name !== s.user_id) return u.name;
+      const digits = (s.user_id || "").split("@")[0].split(":")[0].replace(/\D/g, "");
+      return digits.length >= 7 && digits.length <= 15 ? digits : (u?.display_id || digits);
+    };
+    const modLines = mods.length > 0 ? mods.map((s) => `╰┈➤ @${displayName(s)}`).join("\n") : "╰┈➤ None yet";
+    const guardianLines = guardians.length > 0 ? guardians.map((s) => `╰┈➤ @${displayName(s)}`).join("\n") : "╰┈➤ None yet";
     const text =
       `✨ 𝐓𝐄𝐍𝐊𝐔 天空 ✨\n\n` +
       `━━━━━━━━━━━━\n` +

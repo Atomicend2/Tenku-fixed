@@ -8,6 +8,7 @@ import {
   updateTradeStatus, createSellOffer, getPendingSellOffer, updateSellOfferStatus,
   getCardOwners, getCardIssueNumber, addCard,
   setBotSetting, getBotSetting, deleteBotSetting,
+  deleteUserCardByCopyId, getUserCardByCopyId,
 } from "../db/queries.js";
 import { getTierEmoji, formatNumber, generateId } from "../utils.js";
 import sharp from "sharp";
@@ -94,7 +95,9 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         const shown = owners.slice(0, 10);
         ownersSection = shown.map((o) => {
           ownerMentions.push(o.user_id);
-          return `• #${o.issue_num} @${o.user_id.split("@")[0]} [ID:${o.user_card_id}]`;
+          const u = getUser(o.user_id);
+          const nameLabel = u?.name && u.name !== o.user_id ? u.name : (u?.display_id || o.user_id.split("@")[0]);
+          return `• #${o.issue_num} ${nameLabel} [${o.copy_id || o.user_card_id}]`;
         }).join("\n");
         if (owners.length > 10) ownersSection += `\n_...and ${owners.length - 10} more_`;
       }
@@ -424,8 +427,13 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const buffer = await downloadMediaMessage(target as any, "buffer", {}, { reuploadRequest: (sock as any).updateMediaMessage } as any);
       const imageBase64 = (Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer as any)).toString("base64");
 
+      const geminiKey = process.env["GEMINI_API_KEY"] || "";
+      if (!geminiKey) {
+        await sendText(from, "❌ Gemini API key not configured. Set GEMINI_API_KEY in environment secrets.");
+        return;
+      }
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env["GEMINI_API_KEY"] || "AIzaSyBReuOcZFsIGrrmyvozHBg809HmuORDHCw"}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -671,6 +679,34 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const sell = getPendingSellOffer(sender);
     if (sell) { updateSellOfferStatus(sell.id, "declined"); await sendText(from, "❌ Offer declined."); return; }
     await sendText(from, "❌ No pending offer found.");
+    return;
+  }
+
+  if (cmd === "deletecard" || cmd === "delcard") {
+    const copyId = (args[0] || "").toUpperCase();
+    if (!copyId) {
+      await sendText(from, "❌ Usage: .deletecard <copy_id>\nExample: .deletecard AB3K9");
+      return;
+    }
+    const card = getUserCardByCopyId(copyId);
+    if (!card) {
+      await sendText(from, `❌ No card found with ID: *${copyId}*`);
+      return;
+    }
+    const deleted = deleteUserCardByCopyId(copyId, card.user_id);
+    if (!deleted) {
+      await sendText(from, `❌ Could not delete card *${copyId}*.`);
+      return;
+    }
+    const u = getUser(card.user_id);
+    const ownerDisplay = u?.name && u.name !== card.user_id ? u.name : (u?.display_id || card.user_id);
+    await sendText(from,
+      `🗑️ *Card Deleted*\n\n` +
+      `*Card:* ${card.card_name}\n` +
+      `*Tier:* ${card.tier}\n` +
+      `*Copy ID:* ${copyId}\n` +
+      `*Owner:* ${ownerDisplay}`
+    );
     return;
   }
 }

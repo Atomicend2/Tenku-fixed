@@ -36,14 +36,42 @@ export function getUser(userId: string) {
   return db.prepare("SELECT * FROM users WHERE id = ?").get(phone) as any;
 }
 
+function generateDisplayId(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const db = getDb();
+  let did = "";
+  let tries = 0;
+  do {
+    did = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    tries++;
+  } while (tries < 50 && db.prepare("SELECT 1 FROM users WHERE display_id = ?").get(did));
+  return did;
+}
+
+function generateCopyId(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const db = getDb();
+  let cid = "";
+  let tries = 0;
+  do {
+    cid = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    tries++;
+  } while (tries < 50 && db.prepare("SELECT 1 FROM user_cards WHERE copy_id = ?").get(cid));
+  return cid;
+}
+
 export function ensureUser(userId: string, name?: string) {
   const db = getDb();
   const phone = extractNumberFromJid(userId);
   const existing = getUser(phone);
   if (!existing) {
+    const did = generateDisplayId();
     db.prepare(
-      "INSERT OR IGNORE INTO users (id, name, balance, bank) VALUES (?, ?, 0, 0)"
-    ).run(phone, name || phone);
+      "INSERT OR IGNORE INTO users (id, name, balance, bank, display_id) VALUES (?, ?, 0, 0, ?)"
+    ).run(phone, name || phone, did);
+  } else if (!existing.display_id) {
+    const did = generateDisplayId();
+    db.prepare("UPDATE users SET display_id = ? WHERE id = ? AND (display_id IS NULL OR display_id = '')").run(did, phone);
   }
   return getUser(phone);
 }
@@ -252,10 +280,26 @@ export function getUserCard(userCardId: number) {
 export function giveCard(userId: string, cardId: string) {
   const db = getDb();
   const phone = extractNumberFromJid(userId);
+  const copyId = generateCopyId();
   const result = db.prepare(
-    "INSERT INTO user_cards (user_id, card_id) VALUES (?, ?)"
-  ).run(phone, cardId);
+    "INSERT INTO user_cards (user_id, card_id, copy_id) VALUES (?, ?, ?)"
+  ).run(phone, cardId, copyId);
   return result.lastInsertRowid as number;
+}
+
+export function deleteUserCardByCopyId(copyId: string, ownerId: string) {
+  const db = getDb();
+  const phone = extractNumberFromJid(ownerId);
+  const row = db.prepare("SELECT * FROM user_cards WHERE copy_id = ? AND user_id = ?").get(copyId, phone) as any;
+  if (!row) return null;
+  db.prepare("DELETE FROM card_deck WHERE user_card_id = ?").run(row.id);
+  db.prepare("DELETE FROM user_cards WHERE id = ?").run(row.id);
+  return row;
+}
+
+export function getUserCardByCopyId(copyId: string) {
+  const db = getDb();
+  return db.prepare("SELECT uc.*, c.name AS card_name, c.tier, c.series FROM user_cards uc JOIN cards c ON c.id = uc.card_id WHERE uc.copy_id = ?").get(copyId) as any;
 }
 
 export function transferCard(userCardId: number, newOwnerId: string) {
@@ -965,7 +1009,7 @@ export function updateSellOfferStatus(id: number, status: string) {
 export function getCardOwners(cardId: string) {
   const db = getDb();
   return db.prepare(`
-    SELECT uc.user_id, u.name, uc.id as user_card_id, uc.obtained_at,
+    SELECT uc.user_id, u.name, u.display_id, uc.id as user_card_id, uc.copy_id, uc.obtained_at,
            ROW_NUMBER() OVER (ORDER BY uc.id ASC) as issue_num
     FROM user_cards uc
     LEFT JOIN users u ON u.id = uc.user_id
