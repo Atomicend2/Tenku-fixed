@@ -15,8 +15,10 @@ const TIER_CONFIG: Record<string, { label: string; bg: string; text: string; bor
   "T3": { label: "Rare",      bg: "bg-sky-500/20",    text: "text-sky-400",    border: "border-sky-500/40",    glow: "shadow-[0_0_12px_rgba(56,189,248,0.5)]",   rate: "15%" },
   "T4": { label: "Epic",      bg: "bg-violet-500/20", text: "text-violet-400", border: "border-violet-500/40", glow: "shadow-[0_0_14px_rgba(167,139,250,0.5)]",  rate: "8%"  },
   "T5": { label: "Legendary", bg: "bg-amber-500/20",  text: "text-amber-400",  border: "border-amber-500/50",  glow: "shadow-[0_0_18px_rgba(251,191,36,0.6)]",   rate: "2%"  },
+  "T6": { label: "Animated",  bg: "bg-cyan-500/20",   text: "text-cyan-300",   border: "border-cyan-400/50",   glow: "shadow-[0_0_22px_rgba(34,211,238,0.7)]",   rate: "—"   },
   "TS": { label: "Special",   bg: "bg-rose-500/20",   text: "text-rose-400",   border: "border-rose-500/40",   glow: "shadow-[0_0_14px_rgba(251,113,133,0.5)]",  rate: "—"   },
   "TX": { label: "Exclusive", bg: "bg-fuchsia-500/20",text: "text-fuchsia-400",border: "border-fuchsia-500/40",glow: "shadow-[0_0_18px_rgba(232,121,249,0.6)]",  rate: "—"   },
+  "TZ": { label: "Divine",    bg: "bg-yellow-500/20", text: "text-yellow-300", border: "border-yellow-400/50", glow: "shadow-[0_0_24px_rgba(253,224,71,0.8)]",   rate: "—"   },
 };
 
 export default function Cards() {

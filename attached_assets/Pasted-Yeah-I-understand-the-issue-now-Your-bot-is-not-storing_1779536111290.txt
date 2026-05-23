@@ -1,0 +1,324 @@
+Yeah, I understand the issue now.
+Your bot is not storing the user’s real WhatsApp phone number — it’s storing the internal WhatsApp ID/LID instead.
+
+That long thing like:
+
+101014040526896
+
+20483929393
+
+444832-1721357
+
+
+is usually one of these:
+
+WhatsApp LID (Linked Identity)
+
+WhatsApp internal user ID
+
+Baileys generated ID
+
+Device/session identifier
+
+
+instead of the real JID:
+
+2348144550593@s.whatsapp.net
+
+
+or the clean number:
+
+2348144550593
+
+
+So the problem is NOT your website registration logic first.
+The real problem is:
+
+> Your bot is using the wrong property from the WhatsApp message object.
+
+
+
+Usually this happens in bots using:
+
+[Baileys](https://github.com/WhiskeySockets/Baileys?utm_source=chatgpt.com)
+
+WhatsApp Web APIs
+
+modified forks
+
+
+You’re probably doing something like:
+
+m.sender
+
+or
+
+msg.key.participant
+
+or
+
+user.id
+
+and the newer WhatsApp versions now return LIDs instead of phone JIDs sometimes.
+
+The FIX is:
+
+What you should store
+
+Instead of storing:
+
+101014040526896
+
+you should extract:
+
+2348144550593
+
+from the actual JID.
+
+Usually:
+
+m.sender
+
+returns:
+
+2348144550593@s.whatsapp.net
+
+Then you clean it:
+
+const phone = m.sender.split("@")[0]
+
+That becomes:
+
+2348144550593
+
+Store THAT in your database.
+
+
+---
+
+Why your admin panel shows random IDs
+
+Because your DB schema probably saves:
+
+user.id
+
+instead of:
+
+phoneNumber
+
+or:
+
+jid
+
+So your website sees:
+
+{
+  "id": "101014040526896",
+  "name": "Atomic"
+}
+
+instead of:
+
+{
+  "phone": "2348144550593",
+  "name": "Atomic"
+}
+
+
+---
+
+Proper system flow
+
+What you WANT is:
+
+WhatsApp
+
+User types:
+
+.reg
+
+Bot replies:
+
+Register on website:
+example.com/register
+
+
+---
+
+Website
+
+User enters:
+
+phone number
+
+password
+
+
+Example:
+
+2348144550593
+
+
+---
+
+OTP
+
+Backend sends OTP to WhatsApp or SMS.
+
+
+---
+
+Database
+
+Save:
+
+{
+  "phone": "2348144550593",
+  "password": "...",
+  "verified": true
+}
+
+NOT:
+
+{
+  "id": "101014040526896"
+}
+
+
+---
+
+MOST IMPORTANT PART
+
+If you’re using newer Baileys versions, WhatsApp introduced LIDs.
+
+So even m.sender may sometimes look weird.
+
+You need to normalize the JID.
+
+Use this:
+
+import { jidDecode } from "@whiskeysockets/baileys"
+
+function getRealNumber(jid) {
+    if (!jid) return null
+
+    if (/:\d+@/gi.test(jid)) {
+        const decode = jidDecode(jid)
+        return decode?.user || jid
+    }
+
+    return jid.split("@")[0]
+}
+
+Then:
+
+const phone = getRealNumber(m.sender)
+
+
+---
+
+Another possible issue
+
+You may also be accidentally using:
+
+conn.user.id
+
+That is the BOT account ID, not the user number.
+
+Never use:
+
+conn.user.id
+
+for player registration.
+
+
+---
+
+What to search in your codebase
+
+Search for these:
+
+m.sender
+participant
+remoteJid
+user.id
+conn.user.id
+pushName
+key.id
+
+Then inspect where user data is saved.
+
+You’ll probably find something like:
+
+id: user.id
+
+Replace it with:
+
+phone: m.sender.split("@")[0]
+
+or the normalized version.
+
+
+---
+
+Recommended DB structure
+
+{
+  "phone": "2348144550593",
+  "jid": "2348144550593@s.whatsapp.net",
+  "name": "Atomic",
+  "password": "...",
+  "coins": 5000
+}
+
+Use:
+
+phone → website login
+
+jid → WhatsApp messaging
+
+internal UUID → optional backend ID
+
+
+Never use the WhatsApp LID as the main player identity.
+
+
+---
+
+Your ideal final setup
+
+WhatsApp
+
+.reg
+
+↓
+
+Website
+
+Enter phone/password
+
+↓
+
+OTP
+
+Sent to WhatsApp
+
+↓
+
+Database
+
+Stores REAL phone number
+
+↓
+
+Admin panel
+
+Shows:
+
+2348144550593
+
+NOT:
+
+101014040526896
+
+That’s the actual fix.
