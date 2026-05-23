@@ -1,7 +1,7 @@
 import type { CommandContext } from "./index.js";
 import { sendText } from "../connection.js";
 import { getDb } from "../db/database.js";
-import { ensureUser, updateUser, getUser } from "../db/queries.js";
+import { ensureUser, updateUser, getUser, getMentionName } from "../db/queries.js";
 import { formatNumber, generateId } from "../utils.js";
 import type { WASocket } from "@whiskeysockets/baileys";
 
@@ -19,14 +19,14 @@ async function startWcgGame(sock: WASocket, from: string, gameId: string, player
   const startWord = WCG_START_WORDS[Math.floor(Math.random() * WCG_START_WORDS.length)];
   db.prepare("UPDATE word_chain SET status = 'active', last_word = ?, used_words = ?, current_player = 0 WHERE id = ?")
     .run(startWord, JSON.stringify([startWord]), gameId);
-  const playerTags = players.map((p) => `@${p.split("@")[0]}`).join(", ");
+  const playerTags = players.map((p) => `@${getMentionName(p)}`).join(", ");
   await sock.sendMessage(from, {
     text:
       `📝 *Word Chain Started!*\n\n` +
       `Players: ${playerTags}\n\n` +
       `First word: *${startWord}*\n` +
       `Next word must start with: *${startWord.slice(-1).toUpperCase()}*\n\n` +
-      `@${players[0].split("@")[0]}'s turn! ⏱️ 60 seconds!`,
+      `@${getMentionName(players[0])}'s turn! ⏱️ 60 seconds!`,
     mentions: players,
   });
   startWcgWordTimer(sock, from, gameId, players, 0);
@@ -45,13 +45,13 @@ function startWcgWordTimer(sock: WASocket, from: string, gameId: string, players
     if (!timedOut) return;
     currentPlayers.splice(game.current_player, 1);
     await sock.sendMessage(from, {
-      text: `⏰ @${timedOut.split("@")[0]} ran out of time and was *eliminated*!`,
+      text: `⏰ @${getMentionName(timedOut)} ran out of time and was *eliminated*!`,
       mentions: [timedOut],
     });
     if (currentPlayers.length <= 1) {
       db.prepare("UPDATE word_chain SET status = 'ended' WHERE id = ?").run(gameId);
       await sock.sendMessage(from, {
-        text: `🏆 @${currentPlayers[0]?.split("@")[0] || "Nobody"} wins Word Chain! 🎉`,
+        text: `🏆 @${currentPlayers[0] ? getMentionName(currentPlayers[0]) : "Nobody"} wins Word Chain! 🎉`,
         mentions: currentPlayers,
       });
       return;
@@ -60,7 +60,7 @@ function startWcgWordTimer(sock: WASocket, from: string, gameId: string, players
     db.prepare("UPDATE word_chain SET players = ?, current_player = ? WHERE id = ?")
       .run(JSON.stringify(currentPlayers), nextIdx, gameId);
     await sock.sendMessage(from, {
-      text: `@${currentPlayers[nextIdx].split("@")[0]}'s turn! Word must start with *${game.last_word.slice(-1).toUpperCase()}* — 60 seconds!`,
+      text: `@${getMentionName(currentPlayers[nextIdx])}'s turn! Word must start with *${game.last_word.slice(-1).toUpperCase()}* — 60 seconds!`,
       mentions: [currentPlayers[nextIdx]],
     });
     startWcgWordTimer(sock, from, gameId, currentPlayers, nextIdx);
@@ -143,7 +143,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
     `).run(gameId, from, sender, challenged, JSON.stringify(board), sender);
 
     await sock.sendMessage(from, {
-      text: `⭕❌ *Tic Tac Toe*\n\n@${sender.split("@")[0]} (❌) vs @${challenged.split("@")[0]} (⭕)\n\n${renderTTT(board)}\n\n@${sender.split("@")[0]}'s turn! Type 1-9 to place.`,
+      text: `⭕❌ *Tic Tac Toe*\n\n@${getMentionName(sender)} (❌) vs @${getMentionName(challenged)} (⭕)\n\n${renderTTT(board)}\n\n@${getMentionName(sender)}'s turn! Type 1-9 to place.`,
       mentions: [sender, challenged],
     });
     return;
@@ -161,7 +161,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
 
     const render = board.map((r) => r.join("")).join("\n") + "\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣";
     await sock.sendMessage(from, {
-      text: `🔴🟡 *Connect Four*\n\n@${sender.split("@")[0]} (🔴) vs @${challenged.split("@")[0]} (🟡)\n\n${render}\n\n@${sender.split("@")[0]}'s turn! Type 1-7 to drop.`,
+      text: `🔴🟡 *Connect Four*\n\n@${getMentionName(sender)} (🔴) vs @${getMentionName(challenged)} (🟡)\n\n${render}\n\n@${getMentionName(sender)}'s turn! Type 1-7 to drop.`,
       mentions: [sender, challenged],
     });
     return;
@@ -234,7 +234,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
         players.push(sender);
         db.prepare("UPDATE uno_games SET players = ? WHERE id = ?").run(JSON.stringify(players), existing.id);
         await sock.sendMessage(from, {
-          text: `🃏 @${sender.split("@")[0]} joined UNO! ${players.length} players. Type .startuno to start.`,
+          text: `🃏 @${getMentionName(sender)} joined UNO! ${players.length} players. Type .startuno to start.`,
           mentions: [sender],
         });
       } else {
@@ -248,7 +248,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
       VALUES (?, ?, ?, '[]', '[]', 'waiting')
     `).run(gameId, from, JSON.stringify([sender]));
     await sock.sendMessage(from, {
-      text: `🃏 *UNO* started! @${sender.split("@")[0]} joined. Others type *.uno* to join!\nType *.startuno* when ready.`,
+      text: `🃏 *UNO* started! @${getMentionName(sender)} joined. Others type *.uno* to join!\nType *.startuno* when ready.`,
       mentions: [sender],
     });
     return;
@@ -272,7 +272,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
 
     const currentPlayer = players[0];
     await sock.sendMessage(from, {
-      text: `🃏 *UNO Started!*\n\nPlayers: ${players.map((p) => `@${p.split("@")[0]}`).join(", ")}\nTop card: ${topCard}\n\n@${currentPlayer.split("@")[0]}'s turn! Type *.unohand* to see your cards, *.unoplay [number]* to play, or *.unodraw* to draw.`,
+      text: `🃏 *UNO Started!*\n\nPlayers: ${players.map((p) => `@${getMentionName(p)}`).join(", ")}\nTop card: ${topCard}\n\n@${getMentionName(currentPlayer)}'s turn! Type *.unohand* to see your cards, *.unoplay [number]* to play, or *.unodraw* to draw.`,
       mentions: players,
     });
     return;
@@ -320,7 +320,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
     if (hand.length === 0) {
       db.prepare("UPDATE uno_games SET status = 'ended' WHERE id = ?").run(game.id);
       await sock.sendMessage(from, {
-        text: `🎉 @${sender.split("@")[0]} played *${card}* and *WON UNO*! 🏆`,
+        text: `🎉 @${getMentionName(sender)} played *${card}* and *WON UNO*! 🏆`,
         mentions: [sender],
       });
       return;
@@ -345,7 +345,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
     }
     db.prepare("UPDATE uno_games SET discard = ?, current_player = ? WHERE id = ?").run(JSON.stringify(discard), nextPlayer, game.id);
     await sock.sendMessage(from, {
-      text: `🃏 @${sender.split("@")[0]} played *${card}*!\nTop: ${card}\n\n@${players[nextPlayer].split("@")[0]}'s turn! (${hand.length} cards left for @${sender.split("@")[0]})`,
+      text: `🃏 @${getMentionName(sender)} played *${card}*!\nTop: ${card}\n\n@${getMentionName(players[nextPlayer])}'s turn! (${hand.length} cards left for @${getMentionName(sender)})`,
       mentions: [sender, players[nextPlayer]],
     });
     return;
@@ -367,7 +367,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
     const nextPlayer = (game.current_player + game.direction + players.length) % players.length;
     db.prepare("UPDATE uno_games SET current_player = ? WHERE id = ?").run(nextPlayer, game.id);
     await sock.sendMessage(from, {
-      text: `🃏 @${sender.split("@")[0]} drew a card.\n@${players[nextPlayer].split("@")[0]}'s turn!`,
+      text: `🃏 @${getMentionName(sender)} drew a card.\n@${getMentionName(players[nextPlayer])}'s turn!`,
       mentions: [sender, players[nextPlayer]],
     });
     return;
@@ -383,7 +383,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
       db.prepare(`INSERT INTO word_chain (id, group_id, players, status, join_deadline) VALUES (?, ?, ?, 'waiting', ?)`)
         .run(gameId, from, JSON.stringify([sender]), joinDeadline);
       await sock.sendMessage(from, {
-        text: `📝 *Word Chain Game!*\n\n@${sender.split("@")[0]} started a game!\nType *.joinwcg* to join (20 seconds)\nType *.wcg go* to start early\n\n_Max 5 players. Auto-starts in 20s!_`,
+        text: `📝 *Word Chain Game!*\n\n@${getMentionName(sender)} started a game!\nType *.joinwcg* to join (20 seconds)\nType *.wcg go* to start early\n\n_Max 5 players. Auto-starts in 20s!_`,
         mentions: [sender],
       });
       // Auto-start after 20 seconds
@@ -425,7 +425,7 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
     players.push(sender);
     db.prepare("UPDATE word_chain SET players = ? WHERE id = ?").run(JSON.stringify(players), game.id);
     await sock.sendMessage(from, {
-      text: `✅ @${sender.split("@")[0]} joined Word Chain! (${players.length}/5 players)`,
+      text: `✅ @${getMentionName(sender)} joined Word Chain! (${players.length}/5 players)`,
       mentions: [sender],
     });
     return;
@@ -439,18 +439,18 @@ export async function handleGames(ctx: CommandContext): Promise<void> {
     const p2 = ensureRpg(challenged);
     const damage = (atk: number, def: number) => Math.max(1, atk - Math.floor(def * 0.5) + Math.floor(Math.random() * 20) - 10);
     let p1hp = p1.hp, p2hp = p2.hp;
-    let log = `⚔️ *Battle!*\n@${sender.split("@")[0]} (HP:${p1hp}) vs @${challenged.split("@")[0]} (HP:${p2hp})\n\n`;
+    let log = `⚔️ *Battle!*\n@${getMentionName(sender)} (HP:${p1hp}) vs @${getMentionName(challenged)} (HP:${p2hp})\n\n`;
     let round = 0;
     while (p1hp > 0 && p2hp > 0 && round < 20) {
       round++;
       const d1 = damage(p1.attack, p2.defense);
       const d2 = damage(p2.attack, p1.defense);
       p2hp -= d1; p1hp -= d2;
-      log += `R${round}: @${sender.split("@")[0]} dealt ${d1} dmg | @${challenged.split("@")[0]} dealt ${d2} dmg\n`;
+      log += `R${round}: @${getMentionName(sender)} dealt ${d1} dmg | @${getMentionName(challenged)} dealt ${d2} dmg\n`;
       if (round >= 5) break;
     }
     const winner = p1hp > p2hp ? sender : p2hp > p1hp ? challenged : null;
-    log += `\n${winner ? `🏆 @${winner.split("@")[0]} wins!` : "🤝 Draw!"}`;
+    log += `\n${winner ? `🏆 @${getMentionName(winner)} wins!` : "🤝 Draw!"}`;
     await sock.sendMessage(from, { text: log, mentions: [sender, challenged] });
     return;
   }
@@ -485,7 +485,7 @@ export async function handleGameInput(ctx: CommandContext, text: string): Promis
       if (winner) {
         db.prepare("UPDATE games SET status = 'ended' WHERE id = ?").run(tttGame.id);
         await sock.sendMessage(from, {
-          text: `${renderTTT(board)}\n\n🏆 @${sender.split("@")[0]} wins!`,
+          text: `${renderTTT(board)}\n\n🏆 @${getMentionName(sender)} wins!`,
           mentions: [sender],
         });
       } else if (isDraw) {
@@ -494,7 +494,7 @@ export async function handleGameInput(ctx: CommandContext, text: string): Promis
       } else {
         db.prepare("UPDATE games SET state = ?, current_turn = ? WHERE id = ?").run(JSON.stringify(board), nextTurn, tttGame.id);
         await sock.sendMessage(from, {
-          text: `${renderTTT(board)}\n\n@${nextTurn.split("@")[0]}'s turn!`,
+          text: `${renderTTT(board)}\n\n@${getMentionName(nextTurn)}'s turn!`,
           mentions: [nextTurn],
         });
       }
@@ -515,14 +515,14 @@ export async function handleGameInput(ctx: CommandContext, text: string): Promis
       const timer = wcgWordTimers.get(from);
       if (timer) { clearTimeout(timer); wcgWordTimers.delete(from); }
       await sock.sendMessage(from, {
-        text: `❌ @${sender.split("@")[0]} — ${reason} — *eliminated!*`,
+        text: `❌ @${getMentionName(sender)} — ${reason} — *eliminated!*`,
         mentions: [sender],
       });
       players.splice(wcgGame.current_player, 1);
       if (players.length <= 1) {
         db.prepare("UPDATE word_chain SET status = 'ended' WHERE id = ?").run(wcgGame.id);
         await sock.sendMessage(from, {
-          text: `🏆 @${players[0]?.split("@")[0] || "Nobody"} wins Word Chain! 🎉`,
+          text: `🏆 @${players[0] ? getMentionName(players[0]) : "Nobody"} wins Word Chain! 🎉`,
           mentions: players,
         });
         return true;
@@ -531,7 +531,7 @@ export async function handleGameInput(ctx: CommandContext, text: string): Promis
       db.prepare("UPDATE word_chain SET players = ?, current_player = ? WHERE id = ?")
         .run(JSON.stringify(players), nextIdx, wcgGame.id);
       await sock.sendMessage(from, {
-        text: `@${players[nextIdx].split("@")[0]}'s turn! Word must start with *${lastWord.slice(-1).toUpperCase()}* — 60 seconds!`,
+        text: `@${getMentionName(players[nextIdx])}'s turn! Word must start with *${lastWord.slice(-1).toUpperCase()}* — 60 seconds!`,
         mentions: [players[nextIdx]],
       });
       startWcgWordTimer(sock, from, wcgGame.id, players, nextIdx);
@@ -552,7 +552,7 @@ export async function handleGameInput(ctx: CommandContext, text: string): Promis
     db.prepare("UPDATE word_chain SET last_word = ?, used_words = ?, current_player = ? WHERE id = ?")
       .run(word, JSON.stringify(usedWords), nextIdx, wcgGame.id);
     await sock.sendMessage(from, {
-      text: `✅ @${sender.split("@")[0]} said *${word}*!\nNext: @${players[nextIdx].split("@")[0]} — must start with *${word.slice(-1).toUpperCase()}* ⏱️ 60s`,
+      text: `✅ @${getMentionName(sender)} said *${word}*!\nNext: @${getMentionName(players[nextIdx])} — must start with *${word.slice(-1).toUpperCase()}* ⏱️ 60s`,
       mentions: [sender, players[nextIdx]],
     });
     startWcgWordTimer(sock, from, wcgGame.id, players, nextIdx);

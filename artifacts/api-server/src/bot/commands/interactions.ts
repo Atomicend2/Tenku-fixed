@@ -1,6 +1,6 @@
 import type { CommandContext } from "./index.js";
 import { sendText } from "../connection.js";
-import { getBotSetting, getStaff, setBotSetting } from "../db/queries.js";
+import { getBotSetting, getStaff, setBotSetting, getMentionName } from "../db/queries.js";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
 import { logger } from "../../lib/logger.js";
 
@@ -70,7 +70,7 @@ const SOLO_ACTIONS: Record<string, string[]> = {
 
 export async function handleInteraction(ctx: CommandContext): Promise<void> {
   const { from, sender, args, command: cmd, msg, sock, isOwner } = ctx;
-  const name = sender.split("@")[0];
+  const name = getMentionName(sender);
   const info = msg.message?.extendedTextMessage?.contextInfo;
   const mentioned = info?.mentionedJid?.[0] || info?.participant || undefined;
 
@@ -104,7 +104,7 @@ export async function handleInteraction(ctx: CommandContext): Promise<void> {
     if (mentioned) {
       const templates = actions.with;
       const tmpl = templates[Math.floor(Math.random() * templates.length)];
-      const text = `@${name} ${tmpl.replace("{target}", `@${mentioned.split("@")[0]}`)}`;
+      const text = `@${name} ${tmpl.replace("{target}", `@${getMentionName(mentioned)}`)}`;
       await sendInteractionResult(ctx, text, [sender, mentioned]);
     } else {
       const texts = actions.self;

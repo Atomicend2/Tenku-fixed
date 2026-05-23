@@ -8,7 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function handleMenu(ctx: CommandContext): Promise<void> {
   const { from, sender, sock } = ctx;
-  const senderPhone = sender.split("@")[0]?.split(":")[0] || sender;
+  const { getMentionName: menuGetName } = await import("../db/queries.js");
+  const senderPhone = menuGetName(sender);
 
   const menuText =
 `┌─⟡ 『 𝗧𝗘𝗡𝗞𝗨 天空 』⟡

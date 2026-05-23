@@ -2,7 +2,7 @@ import type { CommandContext } from "./index.js";
 import { sendText } from "../connection.js";
 import {
   getGuild, getUserGuild, createGuild, joinGuild, leaveGuild, getAllGuilds,
-  getGuildMembers, kickFromGuild, disbandGuild, ensureUser, getUser,
+  getGuildMembers, kickFromGuild, disbandGuild, ensureUser, getUser, getMentionName,
 } from "../db/queries.js";
 import { getDb } from "../db/database.js";
 import { generateId } from "../utils.js";
@@ -64,7 +64,7 @@ export async function handleGuilds(ctx: CommandContext): Promise<void> {
     if (!g) { await sendText(from, "❌ Guild not found."); return; }
     const members = getGuildMembers(g.id);
     await sendText(from,
-      `🏰 *Guild: ${g.name}*\n👑 Owner: @${g.owner_id.split("@")[0]}\n📝 ${g.description || "(no description)"}\n⭐ Level: ${g.level}\n👥 Members: ${members.length}`,
+      `🏰 *Guild: ${g.name}*\n👑 Owner: @${getMentionName(g.owner_id)}\n📝 ${g.description || "(no description)"}\n⭐ Level: ${g.level}\n👥 Members: ${members.length}`,
       [g.owner_id]
     );
     return;
@@ -95,7 +95,7 @@ export async function handleGuilds(ctx: CommandContext): Promise<void> {
     if (!g || g.owner_id !== sender) { await sendText(from, "❌ Only guild owners can kick members."); return; }
     kickFromGuild(mentioned, g.id);
     await sock.sendMessage(from, {
-      text: `🚪 @${mentioned.split("@")[0]} was kicked from *${g.name}*!`,
+      text: `🚪 @${getMentionName(mentioned)} was kicked from *${g.name}*!`,
       mentions: [mentioned],
     });
     return;

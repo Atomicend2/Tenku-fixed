@@ -8,7 +8,7 @@ import {
   updateTradeStatus, createSellOffer, getPendingSellOffer, updateSellOfferStatus,
   getCardOwners, getCardIssueNumber, addCard,
   setBotSetting, getBotSetting, deleteBotSetting,
-  deleteUserCardByCopyId, getUserCardByCopyId, getStaff,
+  deleteUserCardByCopyId, getUserCardByCopyId, getStaff, getMentionName,
 } from "../db/queries.js";
 import { getTierEmoji, formatNumber, generateId } from "../utils.js";
 import sharp from "sharp";
@@ -20,7 +20,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0] || sender;
     const cards = getUserCards(target);
     if (cards.length === 0) {
-      await sendText(from, `🎴 @${target.split("@")[0]} has no cards yet!`, [target]);
+      await sendText(from, `🎴 @${getMentionName(target)} has no cards yet!`, [target]);
       return;
     }
     let text = `*🎴 Your card collection:*\n\n`;
@@ -267,7 +267,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const winner = myPower > theirPower ? sender : myPower < theirPower ? challenged : null;
 
     await sock.sendMessage(from, {
-      text: `⚔️ *Card Battle*\n\n@${sender.split("@")[0]} Power: ${myPower}\n@${challenged.split("@")[0]} Power: ${theirPower}\n\n${winner ? `🏆 Winner: @${winner.split("@")[0]}!` : "🤝 It's a tie!"}`,
+      text: `⚔️ *Card Battle*\n\n@${getMentionName(sender)} Power: ${myPower}\n@${getMentionName(challenged)} Power: ${theirPower}\n\n${winner ? `🏆 Winner: @${getMentionName(winner)}!` : "🤝 It's a tie!"}`,
       mentions: [sender, challenged],
     });
     return;
@@ -294,7 +294,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const buf = await getCardImageBuffer(cardData);
     await sock.sendMessage(from, {
       image: buf,
-      caption: `🎉 @${sender.split("@")[0]} claimed *${cardData.name}* (${cardData.tier})!`,
+      caption: `🎉 @${getMentionName(sender)} claimed *${cardData.name}* (${cardData.tier})!`,
       mentions: [sender],
     });
     return;
@@ -513,7 +513,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     ensureUser(mentioned);
     transferCard(card.user_card_id, mentioned);
     await sock.sendMessage(from, {
-      text: `🎁 @${sender.split("@")[0]} gifted *${card.name}* to @${mentioned.split("@")[0]}!`,
+      text: `🎁 @${getMentionName(sender)} gifted *${card.name}* to @${getMentionName(mentioned)}!`,
       mentions: [sender, mentioned],
     });
     return;
@@ -571,7 +571,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const card = cards[cardNum - 1];
     lendCard(card.user_card_id, mentioned);
     await sock.sendMessage(from, {
-      text: `🤝 @${sender.split("@")[0]} lent *${card.name}* to @${mentioned.split("@")[0]}!`,
+      text: `🤝 @${getMentionName(sender)} lent *${card.name}* to @${getMentionName(mentioned)}!`,
       mentions: [sender, mentioned],
     });
     return;
@@ -581,7 +581,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const lent = getLentCards(sender);
     if (lent.length === 0) { await sendText(from, "✅ You have no lent cards."); return; }
     const text = "🤝 *Lent Cards*\n\n" +
-      lent.map((c) => `• *${c.name}* → @${c.lent_to?.split("@")[0]}`).join("\n");
+      lent.map((c) => `• *${c.name}* → @${getMentionName(c.lent_to || "")}`).join("\n");
     await sock.sendMessage(from, { text, mentions: lent.map((c) => c.lent_to).filter(Boolean) });
     return;
   }
@@ -605,7 +605,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const card = cards[cardNum - 1];
     const offerId = createSellOffer(sender, mentioned, card.user_card_id, price);
     await sock.sendMessage(from, {
-      text: `💰 @${mentioned.split("@")[0]}, @${sender.split("@")[0]} wants to sell you *${card.name}* for $${formatNumber(price)}.\n\nReply *.accept* to buy or *.decline* to reject.`,
+      text: `💰 @${getMentionName(mentioned)}, @${getMentionName(sender)} wants to sell you *${card.name}* for $${formatNumber(price)}.\n\nReply *.accept* to buy or *.decline* to reject.`,
       mentions: [sender, mentioned],
     });
     return;
@@ -627,7 +627,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const theirCard = theirCards[theirCardNum - 1];
     const offerId = createTradeOffer(sender, recipient, myCard.user_card_id, theirCard.user_card_id);
     await sock.sendMessage(from, {
-      text: `🔄 @${recipient.split("@")[0]}, @${sender.split("@")[0]} wants to trade:\n*${myCard.name}* for your *${theirCard.name}*\n\nReply *.accept* or *.decline*`,
+      text: `🔄 @${getMentionName(recipient)}, @${getMentionName(sender)} wants to trade:\n*${myCard.name}* for your *${theirCard.name}*\n\nReply *.accept* or *.decline*`,
       mentions: [sender, recipient],
     });
     return;
@@ -643,7 +643,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       transferCard(trade.to_card, trade.from_user);
       updateTradeStatus(trade.id, "accepted");
       await sock.sendMessage(from, {
-        text: `✅ Trade complete!\n@${sender.split("@")[0]} got *${theirCard.name}*\n@${trade.from_user.split("@")[0]} got *${myCard.name}*`,
+        text: `✅ Trade complete!\n@${getMentionName(sender)} got *${theirCard.name}*\n@${getMentionName(trade.from_user)} got *${myCard.name}*`,
         mentions: [sender, trade.from_user],
       });
       return;
@@ -663,7 +663,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       updateUser(sell.seller_id, { balance: (seller.balance || 0) + sell.price });
       updateSellOfferStatus(sell.id, "accepted");
       await sock.sendMessage(from, {
-        text: `✅ Purchase complete! @${sender.split("@")[0]} bought *${card.name}* for $${formatNumber(sell.price)}.`,
+        text: `✅ Purchase complete! @${getMentionName(sender)} bought *${card.name}* for $${formatNumber(sell.price)}.`,
         mentions: [sender, sell.seller_id],
       });
       return;

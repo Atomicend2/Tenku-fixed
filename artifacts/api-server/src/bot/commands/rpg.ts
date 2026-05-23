@@ -1,6 +1,6 @@
 import type { CommandContext } from "./index.js";
 import { sendText } from "../connection.js";
-import { ensureRpg, updateRpg, addToInventory, getInventory, removeFromInventory, getUser, updateUser, getGroup, updateGroup } from "../db/queries.js";
+import { ensureRpg, updateRpg, addToInventory, getInventory, removeFromInventory, getUser, updateUser, getGroup, updateGroup, getMentionName } from "../db/queries.js";
 import { formatNumber } from "../utils.js";
 
 const CLASSES = ["Warrior", "Mage", "Archer", "Rogue", "Paladin", "Assassin"];
@@ -170,7 +170,7 @@ export async function handleRpg(ctx: CommandContext): Promise<void> {
 
   if (cmd === "rpg") {
     await sendText(from,
-      `*RPG STATUS @${sender.split("@")[0]}* ⚔️🌌\n\n` +
+      `*RPG STATUS @${getMentionName(sender)}* ⚔️🌌\n\n` +
       `🏆 *Class*: ${rpg.class}\n` +
       `❤️ *HP*: ${rpg.hp}/${rpg.max_hp}\n\n` +
       `⚔️ *Attack*: ${rpg.attack}\n` +

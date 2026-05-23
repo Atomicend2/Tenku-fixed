@@ -212,11 +212,12 @@ const GENS = [
 
 export async function handleFun(ctx: CommandContext): Promise<void> {
   const { from, sender, args, command: cmd, msg, sock } = ctx;
-  const name = sender.split("@")[0];
+  const { getMentionName: funGetName } = await import("../db/queries.js");
+  const name = funGetName(sender);
   const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
   if (cmd === "gay") {
     const targetId = getFunTarget(ctx);
-    const targetName = targetId.split("@")[0];
+    const targetName = funGetName(targetId);
     const pct = Math.floor(Math.random() * 101);
     await sock.sendMessage(from, {
       text: analysisResult("𝗚𝗮𝘆", targetName, pct),
@@ -227,7 +228,7 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
 
   if (cmd === "lesbian") {
     const targetId = getFunTarget(ctx);
-    const targetName = targetId.split("@")[0];
+    const targetName = funGetName(targetId);
     const pct = Math.floor(Math.random() * 101);
     await sock.sendMessage(from, {
       text: analysisResult("𝗟𝗲𝘀𝗯𝗶𝗮𝗻", targetName, pct),
@@ -237,7 +238,7 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
   }
 
   if (cmd === "simp") {
-    const target = mentioned ? `@${mentioned.split("@")[0]}` : "someone";
+    const target = mentioned ? `@${funGetName(mentioned)}` : "someone";
     const pct = Math.floor(Math.random() * 101);
     await sock.sendMessage(from, {
       text: `😩 @${name} is *${pct}% simp* for ${target}!`,
@@ -251,7 +252,7 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
     const pct = Math.floor(Math.random() * 101);
     const rating = pct >= 80 ? "💍 Perfect match!" : pct >= 60 ? "💕 Good match!" : pct >= 40 ? "🤝 Decent match." : "💔 Not meant to be.";
     await sock.sendMessage(from, {
-      text: `💘 @${name} + @${mentioned.split("@")[0]} = *${pct}%* match\n${rating}`,
+      text: `💘 @${name} + @${funGetName(mentioned)} = *${pct}%* match\n${rating}`,
       mentions: [sender, mentioned],
     });
     return;
@@ -260,7 +261,7 @@ export async function handleFun(ctx: CommandContext): Promise<void> {
   if (cmd === "ship") {
     if (!mentioned) { await sendText(from, "❌ Mention someone to ship with!"); return; }
     const n1 = name;
-    const n2 = mentioned.split("@")[0];
+    const n2 = funGetName(mentioned);
     const ship = n1.slice(0, Math.ceil(n1.length / 2)) + n2.slice(Math.floor(n2.length / 2));
     await sock.sendMessage(from, {
       text: `💑 Ship name: *${ship}* 💕`,

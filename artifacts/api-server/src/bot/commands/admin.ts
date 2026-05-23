@@ -3,7 +3,7 @@ import type { CommandContext } from "./index.js";
 import {
   ensureGroup, getGroup, updateGroup, getWarnings, addWarning, resetWarnings,
   getActiveMembers, getInactiveMembers, getMods, addMod, isMod, getGroupActivity,
-  muteUser, unmuteUser, getCardStats, getStaff,
+  muteUser, unmuteUser, getCardStats, getStaff, getMentionName,
 } from "../db/queries.js";
 import { sendText } from "../connection.js";
 import { formatNumber, mentionTag } from "../utils.js";
@@ -33,7 +33,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     }
     await sock.groupParticipantsUpdate(from, [mentioned], "remove");
     await sock.sendMessage(from, {
-      text: `🚫 @${mentioned.split("@")[0]} has been kicked successfully.`,
+      text: `🚫 @${getMentionName(mentioned)} has been kicked successfully.`,
       mentions: [mentioned],
     });
     return;
@@ -68,13 +68,13 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     const count = warns.length;
     await sendText(
       from,
-      `┌─❖\n│「 ⚠️ 𝗪𝗔𝗥𝗡𝗜𝗡𝗚 」\n└┬❖ 「 @${mentioned.split("@")[0]} 」\n│✑ 𝗥𝗘𝗔𝗦𝗢𝗡: ${reason}\n│✑ 𝗗𝗲𝘃𝗶𝗰𝗲: WhatsApp\n│✑ 𝗟𝗜𝗠𝗜𝗧: ${count} / 5\n└────────────┈ ⳹`,
+      `┌─❖\n│「 ⚠️ 𝗪𝗔𝗥𝗡𝗜𝗡𝗚 」\n└┬❖ 「 @${getMentionName(mentioned)} 」\n│✑ 𝗥𝗘𝗔𝗦𝗢𝗡: ${reason}\n│✑ 𝗗𝗲𝘃𝗶𝗰𝗲: WhatsApp\n│✑ 𝗟𝗜𝗠𝗜𝗧: ${count} / 5\n└────────────┈ ⳹`,
       [mentioned]
     );
     if (count >= 5) {
       if (isBotAdmin) {
         await sock.groupParticipantsUpdate(from, [mentioned], "remove");
-        await sendText(from, `🚫 @${mentioned.split("@")[0]} reached 5 warnings and was removed.`, [mentioned]);
+        await sendText(from, `🚫 @${getMentionName(mentioned)} reached 5 warnings and was removed.`, [mentioned]);
       }
     }
     return;
@@ -88,7 +88,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
       return;
     }
     resetWarnings(mentioned, from);
-    await sendText(from, `✅ Warnings reset for @${mentioned.split("@")[0]}.`, [mentioned]);
+    await sendText(from, `✅ Warnings reset for @${getMentionName(mentioned)}.`, [mentioned]);
     return;
   }
 
@@ -187,7 +187,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     }
     await sock.groupParticipantsUpdate(from, [mentioned], "promote");
     await sock.sendMessage(from, {
-      text: `@${mentioned.split("@")[0]} is now an admin`,
+      text: `@${getMentionName(mentioned)} is now an admin`,
       mentions: [mentioned],
     });
     return;
@@ -204,7 +204,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     }
     await sock.groupParticipantsUpdate(from, [mentioned], "demote");
     await sock.sendMessage(from, {
-      text: `@${mentioned.split("@")[0]} is no longer an admin`,
+      text: `@${getMentionName(mentioned)} is no longer an admin`,
       mentions: [mentioned],
     });
     return;
@@ -219,7 +219,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
       || msg.message?.extendedTextMessage?.contextInfo?.participant;
     if (!mentioned) { await sendText(from, "❌ Mention someone to promote. Usage: .pm @user"); return; }
     await sock.groupParticipantsUpdate(from, [mentioned], "promote");
-    await sock.sendMessage(from, { text: `✅ @${mentioned.split("@")[0]} has been promoted to admin.`, mentions: [mentioned] });
+    await sock.sendMessage(from, { text: `✅ @${getMentionName(mentioned)} has been promoted to admin.`, mentions: [mentioned] });
     return;
   }
 
@@ -232,7 +232,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
       || msg.message?.extendedTextMessage?.contextInfo?.participant;
     if (!mentioned) { await sendText(from, "❌ Mention someone to demote. Usage: .dm @user"); return; }
     await sock.groupParticipantsUpdate(from, [mentioned], "demote");
-    await sock.sendMessage(from, { text: `✅ @${mentioned.split("@")[0]} has been demoted.`, mentions: [mentioned] });
+    await sock.sendMessage(from, { text: `✅ @${getMentionName(mentioned)} has been demoted.`, mentions: [mentioned] });
     return;
   }
 
@@ -250,7 +250,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
       }
       const expiresAt = Math.floor(Date.now() / 1000) + durationSeconds;
       muteUser(target, from, sender, expiresAt);
-      await sendText(from, `🔇 @${target.split("@")[0]} muted for ${formatDuration(durationSeconds)}.`, [target]);
+      await sendText(from, `🔇 @${getMentionName(target)} muted for ${formatDuration(durationSeconds)}.`, [target]);
       return;
     }
     await sock.groupSettingUpdate(from, "announcement");
@@ -266,7 +266,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     const target = info?.mentionedJid?.[0] || info?.participant || null;
     if (target) {
       unmuteUser(target, from);
-      await sendText(from, `🔊 @${target.split("@")[0]} unmuted.`, [target]);
+      await sendText(from, `🔊 @${getMentionName(target)} unmuted.`, [target]);
       return;
     }
     await sock.groupSettingUpdate(from, "not_announcement");
@@ -308,10 +308,10 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     const participants = groupMeta?.participants || [];
     const mentions: string[] = participants.map((p: any) => p.id);
     const announcement = args.join(" ") || "📢 Attention everyone!";
-    const senderName = sender.split("@")[0];
+    const senderName = getMentionName(sender);
     let memberLines = "";
     for (const p of participants) {
-      memberLines += `│  ➤ @${p.id.split("@")[0]}\n`;
+      memberLines += `│  ➤ @${getMentionName(p.id)}\n`;
     }
     const text =
       `╭─❰ 👥 ᴛᴀɢ ᴀʟʟ ɴᴏᴛɪɢʏ ❱─╮\n` +
@@ -365,7 +365,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     if (cmd !== "inactive") {
       text += `╠═ 🟢 𝗔𝗖𝗧𝗜𝗩𝗘\n`;
       for (const m of active) {
-        text += `║ ○ @${m.user_id.split("@")[0]}\n`;
+        text += `║ ○ @${getMentionName(m.user_id)}\n`;
       }
       text += "║\n";
     }
@@ -373,7 +373,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     if (cmd !== "active") {
       text += `╠═ 🔴 𝗜𝗡𝗔𝗖𝗧𝗜𝗩𝗘\n`;
       for (const m of inactive) {
-        text += `║ ○ @${m.user_id.split("@")[0]}\n`;
+        text += `║ ○ @${getMentionName(m.user_id)}\n`;
       }
     }
 
@@ -535,7 +535,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     const creation = meta?.creation
       ? new Date(Number(meta.creation) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
       : "Unknown";
-    let adminLines = admins.slice(0, 5).map((p: any) => `║   • @${p.id.split("@")[0]}`).join("\n");
+    let adminLines = admins.slice(0, 5).map((p: any) => `║   • @${getMentionName(p.id)}`).join("\n");
     if (admins.length > 5) adminLines += `\n║   ...and ${admins.length - 5} more`;
     const text =
       `╔═ ❰ ℹ️ 𝗚𝗥𝗢𝗨𝗣 𝗜𝗡𝗙𝗢 ❱ ═╗\n` +
@@ -640,7 +640,7 @@ export async function handleAdmin(ctx: CommandContext): Promise<void> {
     const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
     if (!mentioned) { await sendText(from, "❌ Mention someone."); return; }
     addMod(mentioned, from, sender);
-    await sendText(from, `✅ @${mentioned.split("@")[0]} is now a mod in this group.`, [mentioned]);
+    await sendText(from, `✅ @${getMentionName(mentioned)} is now a mod in this group.`, [mentioned]);
     return;
   }
 }

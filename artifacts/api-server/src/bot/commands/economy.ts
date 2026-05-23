@@ -3,7 +3,7 @@ import { BOT_OWNER_LID, sendText } from "../connection.js";
 import {
   getUser, ensureUser, updateUser, getInventory, addToInventory, removeFromInventory,
   getShop, getShopItem, getRichList, ensureRpg, getUserRank, getUserGuild, isBanned, getStaff, isMod,
-  getXpLeaderboard, isBot, getAllFrames, getFrameById, equipFrame,
+  getXpLeaderboard, isBot, getAllFrames, getFrameById, equipFrame, getMentionName,
 } from "../db/queries.js";
 import { getDb } from "../db/database.js";
 import { formatNumber, timeAgo } from "../utils.js";
@@ -151,7 +151,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     const xpNeeded = lvl * 100;
     await sendText(
       from,
-      `👤 *Membership — @${sender.split("@")[0]}*\n\n` +
+      `👤 *Membership — @${getMentionName(sender)}*\n\n` +
       `🎖️ Level: ${lvl}\n` +
       `✨ XP: ${xp} / ${xpNeeded}\n` +
       `⭐ Premium: ${user.premium ? "Yes" : "No"}\n` +
@@ -226,7 +226,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     const target = ensureUser(mentioned);
     updateUser(sender, { balance: (user.balance || 0) - amount });
     updateUser(mentioned, { balance: (target.balance || 0) + amount });
-    await sendText(from, `💸 @${sender.split("@")[0]} donated $${formatNumber(amount)} to @${mentioned.split("@")[0]}!`, [sender, mentioned]);
+    await sendText(from, `💸 @${getMentionName(sender)} donated $${formatNumber(amount)} to @${getMentionName(mentioned)}!`, [sender, mentioned]);
     return;
   }
 
@@ -371,13 +371,27 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
 
   if (cmd === "profile" || cmd === "p") {
     const info = ctx.msg.message?.extendedTextMessage?.contextInfo;
-    const targetId = info?.mentionedJid?.[0] || info?.participant || sender;
+    let targetId = info?.mentionedJid?.[0] || info?.participant || sender;
+    // Resolve @lid JIDs to real phone JIDs before any DB lookup
+    if (targetId.endsWith("@lid") && from.endsWith("@g.us")) {
+      try {
+        const meta = await ctx.sock.groupMetadata(from);
+        for (const p of meta.participants as any[]) {
+          if (p.id === targetId || p.lid === targetId) {
+            const real = ([p.id, p.lid] as string[]).find((j: string) => j?.endsWith("@s.whatsapp.net"));
+            if (real) { targetId = real; break; }
+          }
+        }
+      } catch {}
+    }
     const target = ensureUser(targetId);
     const rpg = ensureRpg(targetId);
     const rank = getUserRank(targetId);
     const guild = getUserGuild(targetId);
     const role = getProfileRole(targetId);
-    const name = target.name || `@${targetId.split("@")[0]}`;
+    const name = target.name && target.name !== targetId.split("@")[0]
+      ? target.name
+      : getMentionName(targetId);
     const age = target.age || "Not set";
     const bio = target.bio || "No bio set";
     const registered = formatProfileDate(Number(target.registered_at || target.created_at || now));
@@ -498,7 +512,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       await sendText(from, "🎒 Your inventory is empty.");
       return;
     }
-    const text = `🎒 *Inventory — @${sender.split("@")[0]}*\n\n` +
+    const text = `🎒 *Inventory — @${getMentionName(sender)}*\n\n` +
       inv.map((i) => `${ITEM_EMOJIS[i.item] || "📦"} *${i.item}* x${i.quantity}`).join("\n");
     await sendText(from, text);
     return;
@@ -711,7 +725,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     const target = ensureUser(targetId);
     const targetBal = target.balance || 0;
     if (targetBal <= 0) {
-      await sendText(from, `❌ @${targetId.split("@")[0]} has nothing to steal!`, [targetId]);
+      await sendText(from, `❌ @${getMentionName(targetId)} has nothing to steal!`, [targetId]);
       return;
     }
     updateUser(sender, { last_steal: now });
@@ -723,7 +737,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       updateUser(targetId, { balance: Math.max(0, targetBal - stolen) });
       await sendText(from,
         `🔫 *Heist Successful!*\n\n` +
-        `You robbed @${targetId.split("@")[0]} and got away with *$${formatNumber(stolen)}*!\n` +
+        `You robbed @${getMentionName(targetId)} and got away with *$${formatNumber(stolen)}*!\n` +
         `Your new balance: $${formatNumber((user.balance || 0) + stolen)}`,
         [targetId]
       );
@@ -733,7 +747,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       updateUser(sender, { balance: Math.max(0, (user.balance || 0) - lost) });
       await sendText(from,
         `🚓 *Caught Red-Handed!*\n\n` +
-        `You failed to rob @${targetId.split("@")[0]} and lost *$${formatNumber(lost)}* in the chaos.\n` +
+        `You failed to rob @${getMentionName(targetId)} and lost *$${formatNumber(lost)}* in the chaos.\n` +
         `Your new balance: $${formatNumber(Math.max(0, (user.balance || 0) - lost))}`,
         [targetId]
       );
@@ -750,7 +764,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
       "You have the personality of a wet napkin.",
       "I'd roast you harder, but my mom says I can't burn trash.",
     ];
-    const target = mentioned ? `@${mentioned.split("@")[0]}` : "you";
+    const target = mentioned ? `@${getMentionName(mentioned)}` : "you";
     await ctx.sock.sendMessage(from, {
       text: `🔥 ${target}: ${roasts[Math.floor(Math.random() * roasts.length)]}`,
       mentions: mentioned ? [mentioned] : [],
@@ -769,7 +783,7 @@ export async function handleEconomy(ctx: CommandContext): Promise<void> {
     const guild = getUserGuild(sender);
     await sendText(from,
       `╔ ❰ 📊 Sᴛᴀᴛs Pᴀɴᴇʟ ❱ ╗\n` +
-      `║  👤 @${sender.split("@")[0]}\n` +
+      `║  👤 @${getMentionName(sender)}\n` +
       `║\n` +
       `╠═ ❰ Eᴄᴏɴᴏᴍʏ ❱\n` +
       `║ 💰 Wᴀʟʟᴇᴛ: $${formatNumber(user.balance || 0)}\n` +

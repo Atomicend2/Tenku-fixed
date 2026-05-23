@@ -1,6 +1,6 @@
 import type { CommandContext } from "./index.js";
 import { BOT_OWNER_LID, sendText, isSocketConnected } from "../connection.js";
-import { addStaff, removeStaff, getStaffList, getStaff, ensureUser, getUser, updateUser, getCard, getAllCards, addBan, removeBan, getBanList, setBotSetting, deleteBotSetting, resetUserBalance, resetUserProfile, isBanned } from "../db/queries.js";
+import { addStaff, removeStaff, getStaffList, getStaff, ensureUser, getUser, updateUser, getCard, getAllCards, addBan, removeBan, getBanList, setBotSetting, deleteBotSetting, resetUserBalance, resetUserProfile, isBanned, getMentionName } from "../db/queries.js";
 import { getTierEmoji, isValidTier, generateId, IMAGE_TIERS, VIDEO_TIERS } from "../utils.js";
 import { INTERACTION_NAMES, uploadInteractionGif } from "./interactions.js";
 import { getDb } from "../db/database.js";
@@ -68,7 +68,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     updateUser(targetId, { balance: nextBalance, bank: Math.max(0, Number(target.bank || 0)) });
     await sendText(
       from,
-      `${cmd === "ac" ? "✅ Added" : "✅ Removed"} $${amount.toLocaleString()} ${cmd === "ac" ? "to" : "from"} @${targetId.split("@")[0]}.\nWallet: $${nextBalance.toLocaleString()}\nBank: $${Number(target.bank || 0).toLocaleString()}`,
+      `${cmd === "ac" ? "✅ Added" : "✅ Removed"} $${amount.toLocaleString()} ${cmd === "ac" ? "to" : "from"} @${getMentionName(targetId)}.\nWallet: $${nextBalance.toLocaleString()}\nBank: $${Number(target.bank || 0).toLocaleString()}`,
       [targetId]
     );
     return;
@@ -176,13 +176,13 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     }
 
     if (cmd === "ban") {
-      addBan("user", userTarget, `@${userTarget.split("@")[0]}`, reason, sender);
+      addBan("user", userTarget, `@${getMentionName(userTarget)}`, reason, sender);
       await sock.updateBlockStatus(userTarget, "block").catch(() => {});
-      await sendText(from, `🚫 Banned @${userTarget.split("@")[0]}.`, [userTarget]);
+      await sendText(from, `🚫 Banned @${getMentionName(userTarget)}.`, [userTarget]);
     } else {
       removeBan("user", userTarget);
       await sock.updateBlockStatus(userTarget, "unblock").catch(() => {});
-      await sendText(from, `✅ Unbanned @${userTarget.split("@")[0]}.`, [userTarget]);
+      await sendText(from, `✅ Unbanned @${getMentionName(userTarget)}.`, [userTarget]);
     }
     return;
   }
@@ -229,7 +229,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (!target) { await sendText(from, "❌ Usage: .addmod <phone number> or .addmod @user"); return; }
     addStaff(target, "mod", sender);
     await sock.sendMessage(from, {
-      text: `✅ @${target.split("@")[0]} added as mod.`,
+      text: `✅ @${getMentionName(target)} added as mod.`,
       mentions: [target],
     });
     return;
@@ -241,7 +241,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (!target) { await sendText(from, "❌ Usage: .addguardian <phone number> or .addguardian @user"); return; }
     addStaff(target, "guardian", sender);
     await sock.sendMessage(from, {
-      text: `🛡️ @${target.split("@")[0]} added as guardian.`,
+      text: `🛡️ @${getMentionName(target)} added as guardian.`,
       mentions: [target],
     });
     return;
@@ -254,7 +254,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     const role = cmd === "removemod" ? "mod" : "guardian";
     removeStaffAllVariants(target, role);
     await sock.sendMessage(from, {
-      text: `✅ Removed @${target.split("@")[0]} from ${role}s.`,
+      text: `✅ Removed @${getMentionName(target)} from ${role}s.`,
       mentions: [target],
     });
     return;
@@ -265,7 +265,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (!mentioned) { await sendText(from, "❌ Mention someone."); return; }
     addStaff(mentioned, "recruit", sender);
     await sock.sendMessage(from, {
-      text: `👤 @${mentioned.split("@")[0]} recruited to staff.`,
+      text: `👤 @${getMentionName(mentioned)} recruited to staff.`,
       mentions: [mentioned],
     });
     return;
@@ -280,7 +280,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     const expiry = Math.floor(Date.now() / 1000) + days * 86400;
     updateUser(mentioned, { premium: 1, premium_expiry: expiry });
     await sock.sendMessage(from, {
-      text: `⭐ @${mentioned.split("@")[0]} granted *Premium* for ${days} days!`,
+      text: `⭐ @${getMentionName(mentioned)} granted *Premium* for ${days} days!`,
       mentions: [mentioned],
     });
     return;
@@ -292,7 +292,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (!mentioned) { await sendText(from, "❌ Mention someone."); return; }
     updateUser(mentioned, { premium: 0, premium_expiry: 0 });
     await sock.sendMessage(from, {
-      text: `❌ Premium removed from @${mentioned.split("@")[0]}.`,
+      text: `❌ Premium removed from @${getMentionName(mentioned)}.`,
       mentions: [mentioned],
     });
     return;
@@ -364,7 +364,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (!mentioned) { await sendText(from, "❌ Usage: .resetbal @user"); return; }
     resetUserBalance(mentioned);
     await sock.sendMessage(from, {
-      text: `✅ Wallet and bank reset to $0 for @${mentioned.split("@")[0]}.`,
+      text: `✅ Wallet and bank reset to $0 for @${getMentionName(mentioned)}.`,
       mentions: [mentioned],
     });
     return;
@@ -376,7 +376,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (!mentioned) { await sendText(from, "❌ Usage: .reset @user"); return; }
     resetUserProfile(mentioned);
     await sock.sendMessage(from, {
-      text: `✅ Profile permanently reset for @${mentioned.split("@")[0]}. All data wiped.`,
+      text: `✅ Profile permanently reset for @${getMentionName(mentioned)}. All data wiped.`,
       mentions: [mentioned],
     });
     return;
@@ -447,7 +447,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     ensureUser(userId);
     const target = getUser(userId)!;
     updateUser(userId, { balance: (target.balance || 0) + amount });
-    await sendText(from, `✅ Added $${amount} to @${userId.split("@")[0]}.`, [userId]);
+    await sendText(from, `✅ Added $${amount} to @${getMentionName(userId)}.`, [userId]);
     return;
   }
 
@@ -459,7 +459,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     ensureUser(userId);
     const target = getUser(userId)!;
     updateUser(userId, { balance: Math.max(0, (target.balance || 0) - amount) });
-    await sendText(from, `✅ Removed $${amount} from @${userId.split("@")[0]}.`, [userId]);
+    await sendText(from, `✅ Removed $${amount} from @${getMentionName(userId)}.`, [userId]);
     return;
   }
 
@@ -581,7 +581,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     if (role === "bot") {
       ensureUser(targetId);
       updateUser(targetId, { is_bot: 1 });
-      await sendText(from, `✅ @${targetId.split("@")[0]} has been flagged as a bot and excluded from the economy system.`, [targetId]);
+      await sendText(from, `✅ @${getMentionName(targetId)} has been flagged as a bot and excluded from the economy system.`, [targetId]);
     } else {
       await sendText(from, `❌ Unknown role: *${role}*. Currently only 'bot' is supported.`);
     }
@@ -610,7 +610,7 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
     addToInventory(targetId, itemName);
     await sendText(
       from,
-      `✅ Added *${itemName}* to @${targetId.split("@")[0]}'s inventory.`,
+      `✅ Added *${itemName}* to @${getMentionName(targetId)}'s inventory.`,
       [targetId]
     );
     return;
@@ -622,8 +622,8 @@ export async function handleStaff(ctx: CommandContext): Promise<void> {
       const mods = staff.filter((s) => s.role === "mod");
       const guardians = staff.filter((s) => s.role === "guardian");
       const mentions = [...mods, ...guardians].map((s) => s.user_id);
-      const modLines = mods.length > 0 ? mods.map((s) => ` ╰┈➤ @${s.user_id.split("@")[0]}`).join("\n") : " ╰┈➤ None yet";
-      const guardianLines = guardians.length > 0 ? guardians.map((s) => ` ╰┈➤ @${s.user_id.split("@")[0]}`).join("\n") : " ╰┈➤ None yet";
+      const modLines = mods.length > 0 ? mods.map((s) => ` ╰┈➤ @${getMentionName(s.user_id)}`).join("\n") : " ╰┈➤ None yet";
+      const guardianLines = guardians.length > 0 ? guardians.map((s) => ` ╰┈➤ @${getMentionName(s.user_id)}`).join("\n") : " ╰┈➤ None yet";
       const text =
         `🎀 𝐒𝐇𝚫𝐃𝐎𝐖 𝐆𝚫𝐑𝐃𝚵𝐍 🎀\n\n` +
         `━━━━━━━━━━━━\n` +

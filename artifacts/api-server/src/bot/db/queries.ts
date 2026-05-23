@@ -69,11 +69,24 @@ export function ensureUser(userId: string, name?: string) {
     db.prepare(
       "INSERT OR IGNORE INTO users (id, name, balance, bank, display_id) VALUES (?, ?, 0, 0, ?)"
     ).run(phone, name || phone, did);
-  } else if (!existing.display_id) {
-    const did = generateDisplayId();
-    db.prepare("UPDATE users SET display_id = ? WHERE id = ? AND (display_id IS NULL OR display_id = '')").run(did, phone);
+  } else {
+    if (!existing.display_id) {
+      const did = generateDisplayId();
+      db.prepare("UPDATE users SET display_id = ? WHERE id = ? AND (display_id IS NULL OR display_id = '')").run(did, phone);
+    }
+    // Update name from pushName when we have a real name and the stored one is missing or was defaulted to the phone number
+    if (name && name !== phone && (!existing.name || existing.name === phone)) {
+      db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name, phone);
+    }
   }
   return getUser(phone);
+}
+
+export function getMentionName(userId: string): string {
+  const phone = extractNumberFromJid(userId);
+  const user = getUser(phone);
+  if (user?.name && user.name !== phone) return user.name;
+  return phone;
 }
 
 export function updateUser(userId: string, data: Record<string, any>) {
