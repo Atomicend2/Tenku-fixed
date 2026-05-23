@@ -45,7 +45,7 @@ const publicDir = publicDirCandidates.find((d) => fs.existsSync(d));
 
 if (publicDir) {
   app.use(express.static(publicDir));
-  app.get("*", (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.join(publicDir, "index.html"));
   });
 } else {
