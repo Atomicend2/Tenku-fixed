@@ -349,6 +349,15 @@ export async function sendImage(jid: string, imageBuffer: Buffer, caption?: stri
   return sendWithRetry(() => s.sendMessage(jid, { image: imageBuffer, caption: caption || "" }, withReplyOptions()));
 }
 
+export async function sendVideo(jid: string, videoBuffer: Buffer, caption?: string) {
+  const s = getActiveSock();
+  return sendWithRetry(() => s.sendMessage(jid, { video: videoBuffer, gifPlayback: true, mimetype: "video/mp4", caption: caption || "" }, withReplyOptions()));
+}
+
+export async function sendMedia(jid: string, buffer: Buffer, isVideo: boolean, caption?: string) {
+  return isVideo ? sendVideo(jid, buffer, caption) : sendImage(jid, buffer, caption);
+}
+
 export async function sendReact(jid: string, msgKey: any, emoji: string) {
   const s = getActiveSock();
   return s.sendMessage(jid, { react: { text: emoji, key: msgKey } });

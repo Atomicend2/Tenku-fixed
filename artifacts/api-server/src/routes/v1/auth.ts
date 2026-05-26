@@ -164,11 +164,20 @@ router.post("/register", async (req, res) => {
       });
     } catch (err) {
       logger.error({ err }, "Failed to send registration OTP");
-      res.status(500).json({ success: false, message: "Failed to send OTP via WhatsApp. Bot may be offline." });
+      res.json({
+        success: true,
+        botOffline: true,
+        message: "Account created! However the bot could not send your OTP right now. Use the Resend OTP button once the bot is back online.",
+      });
       return;
     }
   } else {
-    res.status(500).json({ success: false, message: "Bot is currently offline. Please try again later." });
+    logger.warn("Bot not connected during registration, account created without OTP delivery");
+    res.json({
+      success: true,
+      botOffline: true,
+      message: "Account created! The bot is currently offline and could not send your verification code. Use the Resend OTP button to retry when the bot is back online.",
+    });
     return;
   }
 

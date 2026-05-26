@@ -914,7 +914,7 @@ async function buildProfileImage(ctx: CommandContext, targetId: string, user: an
       <text x="382" y="826" text-anchor="middle" font-size="28" font-weight="800" font-style="italic" fill="rgba(255,255,255,.88)" class="shadow">TENKU 天空</text>
     </svg>
   `);
-  const background = user.profile_background && Buffer.isBuffer(user.profile_background)
+  const background = user.registered && user.profile_background && Buffer.isBuffer(user.profile_background)
     ? user.profile_background
     : defaultBgPath;
 
@@ -1015,16 +1015,18 @@ async function getVideoPoster(buffer: Buffer): Promise<Buffer | null> {
 }
 
 async function getProfileAvatar(ctx: CommandContext, targetId: string, user: any): Promise<Buffer> {
-  if (user.profile_picture && Buffer.isBuffer(user.profile_picture)) {
+  if (user.registered && user.profile_picture && Buffer.isBuffer(user.profile_picture)) {
     return user.profile_picture;
   }
-  try {
-    const url = await (ctx.sock as any).profilePictureUrl(targetId, "image");
-    if (url) {
-      const res = await fetch(url);
-      if (res.ok) return Buffer.from(await res.arrayBuffer());
-    }
-  } catch {}
+  if (user.registered) {
+    try {
+      const url = await (ctx.sock as any).profilePictureUrl(targetId, "image");
+      if (url) {
+        const res = await fetch(url);
+        if (res.ok) return Buffer.from(await res.arrayBuffer());
+      }
+    } catch {}
+  }
   const defaultPpPath = path.resolve(new URL(import.meta.url).pathname, "../../assets/default_pp.jpg");
   try {
     return await fs.readFile(defaultPpPath);

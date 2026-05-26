@@ -1,5 +1,5 @@
 import type { CommandContext } from "./index.js";
-import { sendText, sendImage } from "../connection.js";
+import { sendText, sendImage, sendMedia } from "../connection.js";
 import { logger } from "../../lib/logger.js";
 import {
   getUserCards, getCard, giveCard, transferCard, lendCard, retrieveCard, getLentCards,
@@ -10,7 +10,7 @@ import {
   setBotSetting, getBotSetting, deleteBotSetting,
   deleteUserCardByCopyId, getUserCardByCopyId, getStaff, getMentionName, extractNumberFromJid,
 } from "../db/queries.js";
-import { getTierEmoji, formatNumber, generateId } from "../utils.js";
+import { getTierEmoji, formatNumber, generateId, VIDEO_TIERS } from "../utils.js";
 import sharp from "sharp";
 
 export async function handleCards(ctx: CommandContext): Promise<void> {
@@ -54,7 +54,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       `𝗧𝗶𝗲𝗿: ${c.tier}\n` +
       `𝗜𝘀𝘀𝘂𝗲: #${issueNum}\n\n` +
       `∘₊✦──────✦₊∘`;
-    await sendImage(from, buf, caption);
+    await sendMedia(from, buf, VIDEO_TIERS.has(c.tier), caption);
     return;
   }
 
@@ -115,7 +115,11 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         `✦────⋆⋅✧⋅⋆────✦\n\n` +
         `${ownersSection}\n\n` +
         `∘₊✦────────✦₊∘`;
-      await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
+      if (VIDEO_TIERS.has(found.tier)) {
+        await sock.sendMessage(from, { video: buf, gifPlayback: true, mimetype: "video/mp4", caption, mentions: ownerMentions });
+      } else {
+        await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
+      }
     } else {
       for (let i = 0; i < matches.length; i++) {
         const c = matches[i];
@@ -142,7 +146,11 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
           `𝗧𝗼𝘁𝗮𝗹 𝗜𝘀𝘀𝘂𝗲𝘀: ${owners.length}\n\n` +
           `👥 𝗢𝗪𝗡𝗘𝗥𝗦\n${ownersSection}\n\n` +
           `∘₊✦────────✦₊∘`;
-        await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
+        if (VIDEO_TIERS.has(c.tier)) {
+          await sock.sendMessage(from, { video: buf, gifPlayback: true, mimetype: "video/mp4", caption, mentions: ownerMentions });
+        } else {
+          await sock.sendMessage(from, { image: buf, caption, mentions: ownerMentions });
+        }
       }
     }
     return;
@@ -482,6 +490,10 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         }
       );
       const geminiData = await geminiRes.json() as any;
+      if (geminiRes.status === 429 || geminiData?.error?.code === 429 || geminiData?.error?.status === "RESOURCE_EXHAUSTED") {
+        await sendText(from, "❌ Gemini API quota exceeded. You've hit the daily limit — try again tomorrow or check your usage at console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas");
+        return;
+      }
       if (geminiData?.error) throw new Error(geminiData.error.message || "Gemini API error");
       const rawText = (geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
       // Strip markdown code fences if present

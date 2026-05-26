@@ -20,7 +20,11 @@ export async function handleGroupParticipantsUpdate(
   update: { id: string; participants: string[]; action: string }
 ) {
   const { id: groupId, participants, action } = update;
-  const group = getGroup(groupId) || ensureGroup(groupId);
+  let group = getGroup(groupId);
+  if (!group) {
+    const meta = await sock.groupMetadata(groupId).catch(() => null);
+    group = ensureGroup(groupId, meta?.subject);
+  }
   if (isBanned("group", groupId)) {
     await sock.groupLeave(groupId).catch(() => {});
     return;

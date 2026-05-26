@@ -17,9 +17,31 @@ router.get("/:id/image", (req, res) => {
     return;
   }
   const isAnimated = ANIMATED_TIERS.has(card.tier);
-  res.setHeader("Content-Type", isAnimated ? "video/mp4" : "image/jpeg");
+  const contentType = isAnimated ? "video/mp4" : "image/jpeg";
+  const buf: Buffer = Buffer.isBuffer(card.image_data) ? card.image_data : Buffer.from(card.image_data);
+  const total = buf.length;
+
+  res.setHeader("Content-Type", contentType);
   res.setHeader("Cache-Control", "public, max-age=86400");
-  res.send(card.image_data);
+  res.setHeader("Accept-Ranges", "bytes");
+
+  const rangeHeader = req.headers["range"];
+  if (isAnimated && rangeHeader) {
+    const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+    if (match) {
+      const start = parseInt(match[1], 10);
+      const end = match[2] ? parseInt(match[2], 10) : total - 1;
+      const chunkSize = end - start + 1;
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
+      res.setHeader("Content-Length", chunkSize);
+      res.end(buf.slice(start, end + 1));
+      return;
+    }
+  }
+
+  res.setHeader("Content-Length", total);
+  res.end(buf);
 });
 
 function getCardCopyCount(db: any, cardId: string): number {
