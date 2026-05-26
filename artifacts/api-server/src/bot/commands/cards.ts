@@ -8,7 +8,7 @@ import {
   updateTradeStatus, createSellOffer, getPendingSellOffer, updateSellOfferStatus,
   getCardOwners, getCardIssueNumber, addCard,
   setBotSetting, getBotSetting, deleteBotSetting,
-  deleteUserCardByCopyId, getUserCardByCopyId, getStaff, getMentionName,
+  deleteUserCardByCopyId, getUserCardByCopyId, getStaff, getMentionName, extractNumberFromJid,
 } from "../db/queries.js";
 import { getTierEmoji, formatNumber, generateId } from "../utils.js";
 import sharp from "sharp";
@@ -96,7 +96,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
         ownersSection = shown.map((o) => {
           ownerMentions.push(o.user_id);
           const u = getUser(o.user_id);
-          const nameLabel = u?.name && u.name !== o.user_id ? u.name : (u?.display_id || o.user_id.split("@")[0]);
+          const nameLabel = u?.name && u.name !== o.user_id ? u.name : (u?.display_id || extractNumberFromJid(o.user_id));
           return `• #${o.issue_num} ${nameLabel} [${o.copy_id || o.user_card_id}]`;
         }).join("\n");
         if (owners.length > 10) ownersSection += `\n_...and ${owners.length - 10} more_`;
@@ -127,7 +127,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
           const shown = owners.slice(0, 5);
           ownersSection = shown.map((o) => {
             ownerMentions.push(o.user_id);
-            return `• #${o.issue_num} @${o.user_id.split("@")[0]} [ID:${o.user_card_id}]`;
+            return `• #${o.issue_num} @${extractNumberFromJid(o.user_id)} [ID:${o.user_card_id}]`;
           }).join("\n");
           if (owners.length > 5) ownersSection += `\n_...and ${owners.length - 5} more_`;
         }
@@ -218,7 +218,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       const num = String(i + 1).padStart(2, "0");
       const medal = MEDALS[i];
       const u = getUser(e.user_id);
-      const name = u?.name || e.user_id.split("@")[0];
+      const name = u?.name || extractNumberFromJid(e.user_id);
       const prefix = medal ? `${medal} ${num}.` : `${num}.`;
       text += `║ ${prefix} ${name}\n║     └─ 🃏 Cᴀʀᴅs: ${e.card_count}\n║\n`;
     });
@@ -351,7 +351,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
     const MEDALS = ["🥇", "🥈", "🥉"];
     const lines = rows.map((r, i) => {
       const medal = MEDALS[i] || `${String(i + 1).padStart(2, "0")}.`;
-      const name = r.name || r.user_id.split("@")[0];
+      const name = r.name || extractNumberFromJid(r.user_id);
       return `║ ║ ${medal} ${name}\n║ ║     └─ 🃏 ${r.cnt} cards`;
     });
     const text =
@@ -394,6 +394,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
 
   // .myseries — show all unique series in user collection
   if (cmd === "myseries") {
+    const phoneNormalized = extractNumberFromJid(sender);
     const cards = getUserCards(sender);
     if (cards.length === 0) { await sendText(from, "🎴 You have no cards."); return; }
     const db = (await import("../db/database.js")).getDb();
@@ -401,12 +402,42 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       SELECT DISTINCT c.series, COUNT(*) as cnt
       FROM user_cards uc
       JOIN cards c ON c.id = uc.card_id
-      WHERE uc.user_id = ?
+      WHERE uc.user_id = ? OR uc.user_id = ?
       GROUP BY c.series
       ORDER BY cnt DESC
-    `).all(sender) as any[];
+    `).all(phoneNormalized, sender) as any[];
     const lines = seriesRows.map((r, i) => `${i + 1}. ${r.series || "General"} — ${r.cnt} cards`);
     await sendText(from, `📚 *Your Series Collection*\n\n${lines.join("\n")}`);
+    return;
+  }
+
+  // .cs <series> — show user's cards from a specific series
+  if (cmd === "cs") {
+    const seriesName = args.join(" ");
+    if (!seriesName) { await sendText(from, "❌ Usage: .cs <series name>"); return; }
+    const cards = getUserCards(sender);
+    const found = cards.filter((c) =>
+      (c.series || "General").toLowerCase().includes(seriesName.toLowerCase())
+    );
+    if (found.length === 0) {
+      await sendText(from, `❌ You have no cards from series: *${seriesName}*`);
+      return;
+    }
+    const actualSeries = found[0].series || "General";
+    let text =
+      `╭─❰ 🎴 ʏᴏᴜʀ ᴄᴀʀᴅs ❱─╮\n` +
+      `│ 📚 sᴇʀɪᴇs: ${actualSeries}\n` +
+      `│ 🃏 ᴄᴏᴜɴᴛ: ${found.length}\n` +
+      `│\n`;
+    for (let i = 0; i < found.length && i < 20; i++) {
+      const c = found[i];
+      const collIndex = cards.indexOf(c) + 1;
+      text += `├─ 🃏 #${collIndex}: ${c.name}\n`;
+      text += `│   ᴛɪᴇʀ: ${c.tier}\n`;
+    }
+    if (found.length > 20) text += `├─ ᴀɴᴅ ${found.length - 20} ᴍᴏʀᴇ...\n`;
+    text += `╰──────────────╯`;
+    await sendText(from, text);
     return;
   }
 
@@ -704,7 +735,7 @@ export async function handleCards(ctx: CommandContext): Promise<void> {
       return;
     }
     const u = getUser(card.user_id);
-    const ownerDisplay = u?.name && u.name !== card.user_id ? u.name : (u?.display_id || card.user_id);
+    const ownerDisplay = u?.name && u.name !== card.user_id ? u.name : (u?.display_id || extractNumberFromJid(card.user_id));
     await sendText(from,
       `🗑️ *Card Deleted*\n\n` +
       `*Card:* ${card.card_name}\n` +

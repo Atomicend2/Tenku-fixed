@@ -37,7 +37,7 @@ router.get("/me", requireAuth, (req: AuthRequest, res) => {
   const db = getDb();
   const user = req.user;
   const rank = getUserRank(user.id);
-  const total = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_bot, 0) = 0").get() as any)?.cnt || 0;
+  const total = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE COALESCE(is_bot, 0) = 0 AND COALESCE(registered, 0) = 1").get() as any)?.cnt || 0;
 
   const guildRow = db.prepare(`
     SELECT g.name as guild_name FROM guild_members gm
