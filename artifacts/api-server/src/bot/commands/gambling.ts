@@ -1,10 +1,11 @@
 import type { CommandContext } from "./index.js";
-import { sendText } from "../connection.js";
+import { sendText, sendMessage } from "../connection.js";
 import { getUser, ensureUser, updateUser, getGroup } from "../db/queries.js";
 import { formatNumber, coinFlip, rollDice, spin, checkSlotWin, getRouletteColor } from "../utils.js";
+import type { WASocket } from "@whiskeysockets/baileys";
 
 export async function handleGambling(ctx: CommandContext): Promise<void> {
-  const { from, sender, args, command: cmd } = ctx;
+  const { from, sender, args, command: cmd, sock } = ctx;
   const user = ensureUser(sender);
   const limit = await checkGamblingAccess(from, sender, user, cmd);
   if (!limit.allowed) return;
@@ -17,8 +18,33 @@ export async function handleGambling(ctx: CommandContext): Promise<void> {
     const slots = result.split(" | ");
     const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "⭐", "💎", "7️⃣"];
     const randSym = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-    const reelRow = () => [randSym(), randSym(), randSym()].map((s) => `⟦ ${s} ⟧`).join("  ");
+    
+    // Send initial spinning message
+    const spinningMsg = await sock.sendMessage(from, {
+      text: `🎰 *SPINNING...*\n\n⟦ 🎰 ⟧  ⟦ 🎰 ⟧  ⟦ 🎰 ⟧`
+    });
+    
+    // Animate the spin with 8 frames
+    const frames = [];
+    for (let i = 0; i < 8; i++) {
+      const reelRow = [randSym(), randSym(), randSym()].map((s) => `⟦ ${s} ⟧`).join("  ");
+      frames.push(reelRow);
+    }
+    
+    // Show spinning animation
+    for (const frame of frames) {
+      await sleep(300);
+      if (spinningMsg?.key) {
+        await sock.sendMessage(from, {
+          text: `🎰 *SPINNING...*\n\n${frame}`
+        }, { quoted: spinningMsg as any });
+      }
+    }
+    
+    // Final result
     const resultRow = slots.map((s) => `⟦ ${s} ⟧`).join("  ");
+    const reelRow = () => [randSym(), randSym(), randSym()].map((s) => `⟦ ${s} ⟧`).join("  ");
+    
     let winnings = 0;
     let outcome = "";
     if (multiplier === 3) {
@@ -272,7 +298,7 @@ async function checkGamblingAccess(from: string, sender: string, user: any, cmd:
   const cooldown = GAMBLE_COOLDOWNS[cmd] || 120;
   const diff = now - Number(user[field] || 0);
   if (diff < cooldown) {
-    await sendText(from, `⏳ ${label} cooldown: ${formatDuration(cooldown - diff)} left. Other gamble commands can still be ready.`, [sender]);
+    await sendText(from, `⏳ ${label} cooldown: ${formatDuration(cooldown - diff)} left.`, [sender]);
     return { allowed: false, now, day, count, field, label };
   }
   return { allowed: true, now, day, count, field, label };
@@ -298,4 +324,8 @@ function canonicalGambleCommand(cmd: string): string {
 function formatDuration(secs: number): string {
   if (secs < 60) return `${secs}s`;
   return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
