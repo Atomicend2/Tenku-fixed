@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { randomBytes } from "crypto";
 import { getDb } from "../../bot/db/database.js";
-import { getAnySock, isSocketConnected } from "../../bot/connection.js";
+import { getAnySock } from "../../bot/connection.js";
 import { logger } from "../../lib/logger.js";
 
 const router = Router();
@@ -79,21 +79,21 @@ router.post("/otp/send", async (req, res) => {
   db.prepare("INSERT OR REPLACE INTO web_otps (phone, code, expires_at) VALUES (?, ?, ?)").run(normalized, code, expiresAt);
 
   const activeSock = getAnySock();
-  if (activeSock && isSocketConnected()) {
-    try {
-      const jid = `${normalized}@s.whatsapp.net`;
-      await activeSock.sendMessage(jid, {
-        text: `*Tenku 天空* — Your login code:\n\n*${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
-      });
-      logger.info({ phone: normalized }, "OTP sent via WhatsApp");
-    } catch (err) {
-      logger.error({ err }, "Failed to send OTP via WhatsApp");
-      res.status(500).json({ success: false, message: "Failed to send OTP. Bot may be offline." });
-      return;
-    }
-  } else {
-    logger.warn("Bot not connected, cannot send OTP DM");
-    res.status(500).json({ success: false, message: "Bot is currently offline. Please try again later." });
+  if (!activeSock) {
+    logger.warn("No socket available, cannot send OTP DM");
+    res.status(500).json({ success: false, message: "Bot is not initialized. Please try again shortly." });
+    return;
+  }
+
+  try {
+    const jid = `${normalized}@s.whatsapp.net`;
+    await activeSock.sendMessage(jid, {
+      text: `*Tenku 天空* — Your login code:\n\n*${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+    });
+    logger.info({ phone: normalized }, "OTP sent via WhatsApp");
+  } catch (err) {
+    logger.error({ err }, "Failed to send OTP via WhatsApp");
+    res.status(500).json({ success: false, message: "Failed to send OTP. The bot may be reconnecting — please try again in a few seconds." });
     return;
   }
 
@@ -157,26 +157,26 @@ router.post("/register", async (req, res) => {
   db.prepare("INSERT OR REPLACE INTO web_otps (phone, code, expires_at) VALUES (?, ?, ?)").run(normalized, code, expiresAt);
 
   const activeSock = getAnySock();
-  if (activeSock && isSocketConnected()) {
-    try {
-      await activeSock.sendMessage(`${normalized}@s.whatsapp.net`, {
-        text: `*Tenku 天空* — Welcome, ${trimmedName}!\n\nYour registration code:\n\n*${code}*\n\nExpires in 5 minutes. Don't share this code.`,
-      });
-    } catch (err) {
-      logger.error({ err }, "Failed to send registration OTP");
-      res.json({
-        success: true,
-        botOffline: true,
-        message: "Account created! However the bot could not send your OTP right now. Use the Resend OTP button once the bot is back online.",
-      });
-      return;
-    }
-  } else {
-    logger.warn("Bot not connected during registration, account created without OTP delivery");
+  if (!activeSock) {
+    logger.warn("No socket during registration, account created without OTP delivery");
     res.json({
       success: true,
       botOffline: true,
-      message: "Account created! The bot is currently offline and could not send your verification code. Use the Resend OTP button to retry when the bot is back online.",
+      message: "Account created! The bot is not yet initialized — use the Resend OTP button once the bot is online.",
+    });
+    return;
+  }
+
+  try {
+    await activeSock.sendMessage(`${normalized}@s.whatsapp.net`, {
+      text: `*Tenku 天空* — Welcome, ${trimmedName}!\n\nYour registration code:\n\n*${code}*\n\nExpires in 5 minutes. Don't share this code.`,
+    });
+  } catch (err) {
+    logger.error({ err }, "Failed to send registration OTP");
+    res.json({
+      success: true,
+      botOffline: true,
+      message: "Account created! The bot couldn't deliver the code right now — use the Resend OTP button to retry in a few seconds.",
     });
     return;
   }
