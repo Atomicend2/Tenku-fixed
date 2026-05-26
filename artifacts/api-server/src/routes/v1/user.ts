@@ -1,9 +1,12 @@
 import { Router } from "express";
+import multer from "multer";
+import sharp from "sharp";
 import { requireAuth, type AuthRequest } from "./middleware.js";
 import { getDb } from "../../bot/db/database.js";
-import { getUserRank, getUserGuild, getInventory } from "../../bot/db/queries.js";
+import { getUserRank, getUserGuild, getInventory, updateUser } from "../../bot/db/queries.js";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 router.get("/stats", requireAuth, (req: AuthRequest, res) => {
   const user = req.user;
@@ -23,6 +26,7 @@ router.get("/stats", requireAuth, (req: AuthRequest, res) => {
         defense: rpgRow.defense || 10,
         speed: rpgRow.speed || 15,
         dungeonFloor: rpgRow.dungeon_floor || 1,
+        skillPoints: rpgRow.skill_points || 0,
       }
     : null;
 
@@ -31,7 +35,6 @@ router.get("/stats", requireAuth, (req: AuthRequest, res) => {
     ? { id: guildRow.id, name: guildRow.name, level: guildRow.level || 1 }
     : null;
 
-  // Calculate bank max from passive bank_cap inventory items
   const bankCapItems = db.prepare(`
     SELECT si.effect FROM inventory i
     JOIN shop_items si ON LOWER(si.name) = LOWER(i.item)
@@ -44,11 +47,13 @@ router.get("/stats", requireAuth, (req: AuthRequest, res) => {
   const baseBankMax = 50000;
   const bankMax = baseBankMax + extraBankCap;
 
+  const displayPhone = user.phone || user.id;
+
   res.json({
     profile: {
       id: user.id,
+      phone: displayPhone,
       name: user.name || "Shadow",
-      phone: user.phone || "",
       level: user.level || 1,
       xp: user.xp || 0,
       balance: user.balance || 0,
@@ -58,12 +63,137 @@ router.get("/stats", requireAuth, (req: AuthRequest, res) => {
       premium: user.premium || 0,
       bio: user.bio || "",
       registeredAt: user.created_at || 0,
+      hasAvatar: !!(user.profile_picture && Buffer.isBuffer(user.profile_picture)),
+      hasBackground: !!(user.profile_background && Buffer.isBuffer(user.profile_background)),
     },
     rpg,
     guild,
     rank,
     totalUsers: Number(totalUsers),
     xpNeeded,
+  });
+});
+
+// ── Profile avatar image ────────────────────────────────────────────────────
+router.get("/avatar", requireAuth, (req: AuthRequest, res) => {
+  const user = req.user;
+  if (user.profile_picture && Buffer.isBuffer(user.profile_picture)) {
+    res.set("Content-Type", "image/jpeg");
+    res.set("Cache-Control", "no-cache");
+    res.send(user.profile_picture);
+  } else {
+    res.status(404).json({ success: false, message: "No avatar set" });
+  }
+});
+
+// ── Profile background image ────────────────────────────────────────────────
+router.get("/background", requireAuth, (req: AuthRequest, res) => {
+  const user = req.user;
+  if (user.profile_background && Buffer.isBuffer(user.profile_background)) {
+    res.set("Content-Type", "image/jpeg");
+    res.set("Cache-Control", "no-cache");
+    res.send(user.profile_background);
+  } else {
+    res.status(404).json({ success: false, message: "No background set" });
+  }
+});
+
+// ── Upload profile picture ──────────────────────────────────────────────────
+router.post("/setpp", requireAuth, upload.single("image"), async (req: AuthRequest, res) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: "No image provided" });
+      return;
+    }
+    const resized = await sharp(req.file.buffer)
+      .resize(800, 800, { fit: "cover" })
+      .jpeg({ quality: 92 })
+      .toBuffer();
+    updateUser(req.user!.id, { profile_picture: resized, profile_picture_video: null });
+    res.json({ success: true, message: "Profile picture updated." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err?.message || "Failed to process image" });
+  }
+});
+
+// ── Upload profile background ───────────────────────────────────────────────
+router.post("/setbg", requireAuth, upload.single("image"), async (req: AuthRequest, res) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: "No image provided" });
+      return;
+    }
+    const resized = await sharp(req.file.buffer)
+      .resize(800, 800, { fit: "cover" })
+      .jpeg({ quality: 92 })
+      .toBuffer();
+    updateUser(req.user!.id, { profile_background: resized, profile_background_video: null });
+    res.json({ success: true, message: "Profile background updated." });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err?.message || "Failed to process image" });
+  }
+});
+
+// ── Skill points ────────────────────────────────────────────────────────────
+router.get("/skills", requireAuth, (req: AuthRequest, res) => {
+  const db = getDb();
+  const rpg = db.prepare("SELECT * FROM rpg_characters WHERE user_id = ?").get(req.user!.id) as any;
+  if (!rpg) {
+    res.json({ skillPoints: 0, attack: 20, defense: 10, speed: 15, maxHp: 100 });
+    return;
+  }
+  res.json({
+    skillPoints: rpg.skill_points || 0,
+    attack: rpg.attack || 20,
+    defense: rpg.defense || 10,
+    speed: rpg.speed || 15,
+    maxHp: rpg.max_hp || 100,
+    hp: rpg.hp || 100,
+    dungeonFloor: rpg.dungeon_floor || 1,
+    level: rpg.level || 1,
+  });
+});
+
+router.post("/skills/assign", requireAuth, (req: AuthRequest, res) => {
+  const { stat, points } = req.body as { stat?: string; points?: number };
+  const validStats: Record<string, string> = {
+    attack: "attack", defense: "defense", speed: "speed", hp: "max_hp",
+  };
+  if (!stat || !(stat in validStats)) {
+    res.status(400).json({ success: false, message: "stat must be one of: attack, defense, speed, hp" });
+    return;
+  }
+  const pts = Math.max(1, Math.floor(Number(points) || 1));
+  const db = getDb();
+  const rpg = db.prepare("SELECT * FROM rpg_characters WHERE user_id = ?").get(req.user!.id) as any;
+  if (!rpg) {
+    res.status(404).json({ success: false, message: "No RPG character found. Start with .dungeon in the bot." });
+    return;
+  }
+  const available = rpg.skill_points || 0;
+  if (pts > available) {
+    res.status(400).json({ success: false, message: `Not enough skill points. You have ${available} SP.` });
+    return;
+  }
+  const dbKey = validStats[stat];
+  const gain = dbKey === "max_hp" ? pts * 5 : pts * 2;
+  const current = rpg[dbKey] || 0;
+  const newVal = current + gain;
+  const updates: Record<string, number> = {
+    skill_points: available - pts,
+    [dbKey]: newVal,
+  };
+  if (dbKey === "max_hp") {
+    updates.hp = Math.min(rpg.hp || 1, newVal);
+  }
+  const setClause = Object.keys(updates).map((k) => `${k} = ?`).join(", ");
+  db.prepare(`UPDATE rpg_characters SET ${setClause} WHERE user_id = ?`)
+    .run(...Object.values(updates), req.user!.id);
+  res.json({
+    success: true,
+    message: `Spent ${pts} SP on ${stat}! +${gain} ${stat === "hp" ? "Max HP" : stat}.`,
+    newValue: newVal,
+    remainingPoints: available - pts,
   });
 });
 

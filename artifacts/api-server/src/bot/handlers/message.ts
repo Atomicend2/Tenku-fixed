@@ -50,7 +50,8 @@ export async function handleMessage(
   // Newer WhatsApp clients use @lid JIDs in groups (e.g. 101xxx@lid) instead
   // of the real phone JID. Resolve to the real @s.whatsapp.net JID using
   // group metadata so we always store the phone number as the user ID.
-  if (sender.endsWith("@lid") && isGroup) {
+  const senderWasLid = sender.endsWith("@lid");
+  if (senderWasLid && isGroup) {
     try {
       resolvedGroupMeta = await sock.groupMetadata(from);
       for (const p of resolvedGroupMeta.participants as any[]) {
@@ -59,6 +60,31 @@ export async function handleMessage(
           const realJid = ([p.id, p.lid] as string[])
             .find(j => j?.endsWith("@s.whatsapp.net"));
           if (realJid) { sender = realJid; break; }
+        }
+      }
+    } catch {}
+  }
+  // If we resolved an @lid JID, migrate the LID-keyed DB record to the real phone
+  if (senderWasLid && !sender.endsWith("@lid")) {
+    const lidId = senderRaw.split("@")[0];
+    const realPhone = sender.split("@")[0].split(":")[0];
+    try {
+      const { getDb } = await import("../db/database.js");
+      const db = getDb();
+      const lidRecord = db.prepare("SELECT * FROM users WHERE id = ?").get(lidId) as any;
+      if (lidRecord) {
+        const phoneRecord = db.prepare("SELECT * FROM users WHERE id = ?").get(realPhone) as any;
+        if (!phoneRecord) {
+          // Rename the LID-keyed record to the real phone number
+          db.transaction(() => {
+            db.prepare("UPDATE users SET id = ?, phone = ? WHERE id = ?").run(realPhone, realPhone, lidId);
+            for (const t of ["rpg_characters", "inventory", "user_cards", "message_counts", "card_deck", "deck_backgrounds", "guild_members", "warnings", "muted_users", "summer_tokens", "afk_users"]) {
+              try { db.prepare(`UPDATE OR IGNORE ${t} SET user_id = ? WHERE user_id = ?`).run(realPhone, lidId); } catch {}
+            }
+          })();
+        } else {
+          // Both records exist — at least link the LID record with the real phone for admin display
+          db.prepare("UPDATE users SET phone = ? WHERE id = ? AND (phone IS NULL OR phone = '' OR phone = id)").run(realPhone, lidId);
         }
       }
     } catch {}
@@ -270,8 +296,21 @@ function canUseMentionSticker(jid: string): boolean {
   return expiry === 0 || expiry > Math.floor(Date.now() / 1000);
 }
 
+const UNREG_ALLOWED_CMDS = new Set([
+  "reg", "register", "menu", "ping", "test", "alive", "uptime",
+  "info", "help", "website", "community",
+]);
+
 async function dispatch(ctx: CommandContext): Promise<void> {
   const { command, from, sender, msg } = ctx;
+
+  if (!UNREG_ALLOWED_CMDS.has(command)) {
+    const senderUser = getUser(sender);
+    if (!senderUser?.registered) {
+      await sendText(from, `❌ You need to register before using bot commands.\n\nType *.reg YourName* to register, or visit the website to sign up.`);
+      return;
+    }
+  }
 
   switch (command) {
     case "menu":
@@ -501,7 +540,6 @@ async function dispatch(ctx: CommandContext): Promise<void> {
     case "character":
     case "psize":
     case "pp":
-    case "skill":
     case "duality":
     case "gen":
     case "pov":
@@ -539,6 +577,7 @@ async function dispatch(ctx: CommandContext): Promise<void> {
     case "quest":
     case "raid":
     case "class":
+    case "skill":
     case "attack":
     case "heavy":
     case "defend":
@@ -643,7 +682,7 @@ function createReplySocket(sock: WASocket, msg: proto.IWebMessageInfo): WASocket
         return typeof value === "function" ? value.bind(target) : value;
       }
       return (jid: string, content: any, options?: any) => {
-        if (content?.delete || content?.react) {
+        if (content?.delete || content?.react || content?.edit) {
           return sendWithRetry(() => target.sendMessage(jid, content, options));
         }
         return sendWithRetry(() => target.sendMessage(jid, content, { quoted: msg, ...(options || {}) }));

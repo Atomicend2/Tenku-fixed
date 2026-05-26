@@ -24,20 +24,19 @@ export async function handleGambling(ctx: CommandContext): Promise<void> {
       text: `🎰 *SPINNING...*\n\n⟦ 🎰 ⟧  ⟦ 🎰 ⟧  ⟦ 🎰 ⟧`
     });
     
-    // Animate the spin with 8 frames
+    // Animate by editing the same message 8 times (no flood)
     const frames = [];
     for (let i = 0; i < 8; i++) {
       const reelRow = [randSym(), randSym(), randSym()].map((s) => `⟦ ${s} ⟧`).join("  ");
       frames.push(reelRow);
     }
-    
-    // Show spinning animation
     for (const frame of frames) {
       await sleep(300);
       if (spinningMsg?.key) {
         await sock.sendMessage(from, {
-          text: `🎰 *SPINNING...*\n\n${frame}`
-        }, { quoted: spinningMsg as any });
+          text: `🎰 *SPINNING...*\n\n${frame}`,
+          edit: spinningMsg.key,
+        });
       }
     }
     

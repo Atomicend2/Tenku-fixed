@@ -30,12 +30,30 @@ export async function handleGroupParticipantsUpdate(
     return;
   }
 
-  for (const participant of participants) {
+  // Fetch group metadata once for LID resolution
+  let groupMeta: any = null;
+  const needsMeta = participants.some((p) => p.endsWith("@lid"));
+  if (needsMeta) {
+    groupMeta = await sock.groupMetadata(groupId).catch(() => null);
+  }
+
+  for (const rawParticipant of participants) {
+    // Resolve @lid JIDs to real phone JIDs so mentions actually tag the user
+    let participant = rawParticipant;
+    if (rawParticipant.endsWith("@lid") && groupMeta) {
+      for (const p of groupMeta.participants as any[]) {
+        if (p.id === rawParticipant || p.lid === rawParticipant) {
+          const real = ([p.id, p.lid] as string[]).find((j: string) => j?.endsWith("@s.whatsapp.net"));
+          if (real) { participant = real; break; }
+        }
+      }
+    }
+
     if (action === "add") {
-      const isLikelyBot = participant.endsWith("@lid") || participant.includes(".bot@");
+      const isLikelyBot = rawParticipant.endsWith("@lid") || rawParticipant.includes(".bot@");
       if (isLikelyBot && (group.anti_bot || "off") === "on") {
         try {
-          await sock.groupParticipantsUpdate(groupId, [participant], "remove");
+          await sock.groupParticipantsUpdate(groupId, [rawParticipant], "remove");
           await sendText(groupId, `🤖 Suspected bot account was automatically removed.`);
         } catch {}
         updateGroup(groupId, { cards_enabled: "off", spawn_enabled: "off" });
@@ -48,7 +66,9 @@ export async function handleGroupParticipantsUpdate(
       }
     } else if (action === "remove" || action === "leave") {
       if (group.leave === "on") {
-        const msg = group.leave_msg || `Goodbye @${participant.split("@")[0]}! 👋`;
+        const name = mentionTag(participant);
+        const template = group.leave_msg || `Goodbye ${name}! 👋`;
+        const msg = replaceWelcomeMention(template, participant);
         await sendText(groupId, msg, [participant]).catch(() => {});
       }
     }

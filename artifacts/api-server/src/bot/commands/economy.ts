@@ -941,9 +941,14 @@ async function buildProfileImage(ctx: CommandContext, targetId: string, user: an
     composites.push({ input: frameBuffer, left: 272, top: 131 });
   }
 
-  return sharp(background)
+  const raw = await sharp(background)
     .resize(width, height, { fit: "cover" })
     .composite(composites)
+    .png()
+    .toBuffer();
+  // Final output is always 800×800 square
+  return sharp(raw)
+    .resize(800, 800, { fit: "cover" })
     .jpeg({ quality: 92 })
     .toBuffer();
 }

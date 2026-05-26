@@ -4,7 +4,7 @@ import { useGetUserStats, useGetUserInventory, useGetUserAchievements } from "@w
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Wallet, Landmark, Shield, Swords, Zap, Activity, Ticket, Layers, Upload, CheckCircle2 } from "lucide-react";
+import { Trophy, Wallet, Landmark, Shield, Swords, Zap, Activity, Ticket, Layers, Upload, CheckCircle2, ImagePlus, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react/src/custom-fetch";
@@ -91,7 +91,7 @@ export default function Profile() {
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="w-full justify-start border-b border-primary/20 bg-transparent rounded-none h-auto p-0 mb-6 gap-6 overflow-x-auto">
-          {["Overview", "Inventory", "Frames", "Pets", "Achievements"].map((tab) => (
+          {["Overview", "Skills", "Inventory", "Frames", "Appearance", "Achievements"].map((tab) => (
             <TabsTrigger 
               key={tab.toLowerCase()} 
               value={tab.toLowerCase()}
@@ -151,6 +151,10 @@ export default function Profile() {
           )}
         </TabsContent>
 
+        <TabsContent value="skills">
+          <SkillsTab token={token} />
+        </TabsContent>
+
         <TabsContent value="inventory">
           <div className="glass-card rounded-xl p-6 border border-white/10">
             <h3 className="font-serif text-xl font-bold text-white mb-6 border-b border-primary/15 pb-4">Your Inventory</h3>
@@ -184,6 +188,10 @@ export default function Profile() {
 
         <TabsContent value="frames">
           <FramesTab token={token} userRole={(user as any)?.role} />
+        </TabsContent>
+
+        <TabsContent value="appearance">
+          <AppearanceTab token={token} />
         </TabsContent>
 
         <TabsContent value="pets">
@@ -229,6 +237,267 @@ export default function Profile() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SkillsTab({ token }: { token: string | null }) {
+  const queryClient = useQueryClient();
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const [amount, setAmount] = useState<Record<string, number>>({ attack: 1, defense: 1, speed: 1, hp: 1 });
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["skills"],
+    queryFn: () => customFetch<any>("/api/v1/user/skills"),
+    enabled: !!token,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ stat, points }: { stat: string; points: number }) =>
+      customFetch<any>("/api/v1/user/skills/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stat, points }),
+      }),
+    onSuccess: (res) => {
+      setMsg(res.message || "Points assigned!");
+      queryClient.invalidateQueries({ queryKey: ["skills"] });
+      queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+      setAssigning(null);
+    },
+    onError: () => setMsg("Failed to assign points."),
+  });
+
+  if (isLoading) {
+    return <div className="h-64 glass-card rounded-xl animate-pulse" />;
+  }
+
+  const sp = data?.skillPoints ?? 0;
+  const stats = [
+    { key: "attack", label: "Attack", icon: Swords, color: "bg-orange-500", value: data?.attack ?? 20 },
+    { key: "defense", label: "Defense", icon: Shield, color: "bg-blue-500", value: data?.defense ?? 10 },
+    { key: "speed", label: "Speed", icon: Zap, color: "bg-yellow-500", value: data?.speed ?? 15 },
+    { key: "hp", label: "Max HP", icon: Activity, color: "bg-red-500", value: data?.maxHp ?? 100 },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="glass-card rounded-xl p-6 border border-white/10">
+        <div className="flex items-center justify-between mb-6 border-b border-primary/15 pb-4">
+          <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            Skill Points
+          </h3>
+          <span className="px-4 py-2 bg-primary/20 border border-primary/40 text-primary font-bold text-lg rounded-lg font-mono">
+            {sp} SP available
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6">
+          Spend skill points to permanently boost your RPG stats. Each point costs 1 SP and gives +2 to the stat (+5 for HP).
+          You earn skill points by leveling up in the bot.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {stats.map(({ key, label, icon: Icon, color, value }) => (
+            <div key={key} className="bg-black/40 border border-white/10 rounded-xl p-5 space-y-3 hover:border-white/20 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-semibold text-white">{label}</span>
+                </div>
+                <span className="font-mono text-2xl font-bold text-white">{value}</span>
+              </div>
+              <div className="h-2 w-full bg-black rounded-full overflow-hidden border border-white/5">
+                <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${Math.min(100, (value / (key === "hp" ? 500 : 200)) * 100)}%` }} />
+              </div>
+              {sp > 0 && (
+                assigning === key ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={sp}
+                      value={amount[key]}
+                      onChange={(e) => setAmount((prev) => ({ ...prev, [key]: Math.max(1, Math.min(sp, parseInt(e.target.value) || 1)) }))}
+                      className="w-20 bg-black/60 border border-white/20 rounded px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:border-primary/50"
+                    />
+                    <button
+                      onClick={() => assignMutation.mutate({ stat: key, points: amount[key] })}
+                      disabled={assignMutation.isPending}
+                      className="flex-1 py-1.5 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary text-sm font-semibold rounded-lg transition-colors"
+                    >
+                      {assignMutation.isPending ? "..." : `Spend ${amount[key]} SP`}
+                    </button>
+                    <button onClick={() => setAssigning(null)} className="text-muted-foreground hover:text-white text-xs px-2">✕</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setAssigning(key); setMsg(null); }}
+                    className="w-full py-1.5 text-sm text-primary/80 hover:text-primary border border-primary/20 hover:border-primary/40 rounded-lg transition-colors"
+                  >
+                    + Assign Points
+                  </button>
+                )
+              )}
+            </div>
+          ))}
+        </div>
+
+        {msg && (
+          <p className={cn("mt-4 text-sm text-center", msg.includes("!") ? "text-green-400" : "text-red-400")}>{msg}</p>
+        )}
+        {sp === 0 && (
+          <p className="mt-4 text-sm text-center text-muted-foreground">
+            No skill points available. Level up in the bot to earn more!
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AppearanceTab({ token }: { token: string | null }) {
+  const queryClient = useQueryClient();
+  const ppRef = useRef<HTMLInputElement>(null);
+  const bgRef = useRef<HTMLInputElement>(null);
+  const [ppPreview, setPpPreview] = useState<string | null>(null);
+  const [bgPreview, setBgPreview] = useState<string | null>(null);
+  const [ppStatus, setPpStatus] = useState<string | null>(null);
+  const [bgStatus, setBgStatus] = useState<string | null>(null);
+
+  const { data: statsData } = useQuery({
+    queryKey: ["user-stats"],
+    queryFn: () => customFetch<any>("/api/v1/user/stats"),
+    enabled: !!token,
+  });
+
+  const hasAvatar = statsData?.profile?.hasAvatar;
+  const hasBg = statsData?.profile?.hasBackground;
+
+  const handleUpload = async (type: "pp" | "bg") => {
+    const ref = type === "pp" ? ppRef : bgRef;
+    const file = ref.current?.files?.[0];
+    if (!file) return;
+    const setStatus = type === "pp" ? setPpStatus : setBgStatus;
+    const endpoint = type === "pp" ? "/api/v1/user/setpp" : "/api/v1/user/setbg";
+    const form = new FormData();
+    form.append("image", file);
+    try {
+      setStatus("Uploading...");
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const json = await res.json();
+      if (json.success) {
+        setStatus("Updated! Use .p in the bot to see your card.");
+        queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+        if (type === "pp") setPpPreview(null);
+        else setBgPreview(null);
+        if (ref.current) ref.current.value = "";
+      } else {
+        setStatus(json.message || "Upload failed.");
+      }
+    } catch {
+      setStatus("Upload failed.");
+    }
+  };
+
+  const handleFileChange = (type: "pp" | "bg", file: File | undefined) => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    if (type === "pp") setPpPreview(url);
+    else setBgPreview(url);
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Profile Picture */}
+      <div className="glass-card rounded-xl p-6 border border-white/10 space-y-4">
+        <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2 border-b border-primary/15 pb-4">
+          <UserCircle2 className="w-5 h-5 text-primary" />
+          Profile Picture
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          This image appears on your <span className="font-mono text-primary">.p</span> card as your avatar. Recommended: square image, at least 400×400.
+        </p>
+        <div className="flex items-center gap-4">
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-black/50 border-2 border-white/10 flex items-center justify-center shrink-0">
+            {ppPreview ? (
+              <img src={ppPreview} alt="Preview" className="w-full h-full object-cover" />
+            ) : hasAvatar ? (
+              <img src="/api/v1/user/avatar" alt="Current avatar" className="w-full h-full object-cover" />
+            ) : (
+              <UserCircle2 className="w-12 h-12 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex-1 space-y-2">
+            <input
+              ref={ppRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => handleFileChange("pp", e.target.files?.[0])}
+              className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border file:border-white/20 file:bg-white/5 file:text-white file:text-xs file:cursor-pointer"
+            />
+            <button
+              onClick={() => handleUpload("pp")}
+              disabled={!ppRef.current?.files?.[0]}
+              className="w-full py-2 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary text-sm font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <ImagePlus className="w-4 h-4" />
+              Set Profile Picture
+            </button>
+          </div>
+        </div>
+        {ppStatus && (
+          <p className={cn("text-sm", ppStatus.includes("!") ? "text-green-400" : "text-muted-foreground")}>{ppStatus}</p>
+        )}
+      </div>
+
+      {/* Profile Background */}
+      <div className="glass-card rounded-xl p-6 border border-white/10 space-y-4">
+        <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2 border-b border-primary/15 pb-4">
+          <ImagePlus className="w-5 h-5 text-primary" />
+          Profile Background
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          This image appears as the background of your <span className="font-mono text-primary">.p</span> card. Recommended: landscape or portrait image.
+        </p>
+        <div className="space-y-3">
+          <div className="w-full h-32 rounded-lg overflow-hidden bg-black/50 border border-white/10 flex items-center justify-center">
+            {bgPreview ? (
+              <img src={bgPreview} alt="Preview" className="w-full h-full object-cover" />
+            ) : hasBg ? (
+              <img src="/api/v1/user/background" alt="Current background" className="w-full h-full object-cover" />
+            ) : (
+              <div className="flex flex-col items-center text-muted-foreground">
+                <ImagePlus className="w-8 h-8 mb-2 opacity-30" />
+                <span className="text-xs">No background set</span>
+              </div>
+            )}
+          </div>
+          <input
+            ref={bgRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => handleFileChange("bg", e.target.files?.[0])}
+            className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border file:border-white/20 file:bg-white/5 file:text-white file:text-xs file:cursor-pointer"
+          />
+          <button
+            onClick={() => handleUpload("bg")}
+            disabled={!bgRef.current?.files?.[0]}
+            className="w-full py-2 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary text-sm font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Set Background
+          </button>
+          {bgStatus && (
+            <p className={cn("text-sm", bgStatus.includes("!") ? "text-green-400" : "text-muted-foreground")}>{bgStatus}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

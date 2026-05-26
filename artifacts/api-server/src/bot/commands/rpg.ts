@@ -168,6 +168,63 @@ export async function handleRpg(ctx: CommandContext): Promise<void> {
     return;
   }
 
+  if (cmd === "skill") {
+    const skillPts = rpg.skill_points || 0;
+    if (!args[0]) {
+      await sendText(from,
+        `⚡ *Skill Points — ${getMentionName(sender)}*\n\n` +
+        `📊 Available: *${skillPts} SP*\n\n` +
+        `Current Stats:\n` +
+        `⚔️ Attack: ${rpg.attack}  🛡️ Defense: ${rpg.defense}\n` +
+        `💨 Speed: ${rpg.speed}  ❤️ Max HP: ${rpg.max_hp}\n\n` +
+        `*Spend SP:*  _.skill [stat] [points]_\n` +
+        `_Stats: attack, defense, speed, hp_\n` +
+        `_e.g. .skill attack 5 → spends 5 SP, +10 ATK_\n\n` +
+        `_Tip: You can also assign SP from the website!_`,
+        [sender]
+      );
+      return;
+    }
+    const statMap: Record<string, string> = {
+      attack: "attack", atk: "attack",
+      defense: "defense", def: "defense",
+      speed: "speed", spd: "speed",
+      hp: "max_hp", health: "max_hp",
+    };
+    const statKey = statMap[args[0]?.toLowerCase()];
+    if (!statKey) {
+      await sendText(from, "❌ Unknown stat. Choose from: *attack*, *defense*, *speed*, *hp*");
+      return;
+    }
+    const points = parseInt(args[1] || "1", 10);
+    if (isNaN(points) || points < 1) {
+      await sendText(from, "❌ Points must be a positive number.");
+      return;
+    }
+    if (points > skillPts) {
+      await sendText(from, `❌ Not enough skill points. You have *${skillPts} SP* available.`);
+      return;
+    }
+    const gain = statKey === "max_hp" ? points * 5 : points * 2;
+    const current = rpg[statKey] || 0;
+    const updates: Record<string, number> = {
+      skill_points: skillPts - points,
+      [statKey]: current + gain,
+    };
+    if (statKey === "max_hp") {
+      updates.hp = Math.min((rpg.hp || 1) + gain, current + gain);
+    }
+    updateRpg(sender, updates);
+    const statLabel = statKey === "max_hp" ? "Max HP" : statKey.charAt(0).toUpperCase() + statKey.slice(1);
+    await sendText(from,
+      `✅ Spent *${points} SP* on *${statLabel}*!\n\n` +
+      `${statKey === "max_hp" ? "❤️" : statKey === "attack" ? "⚔️" : statKey === "defense" ? "🛡️" : "💨"} ` +
+      `${statLabel}: ${current} → ${current + gain} (+${gain})\n` +
+      `⚡ Remaining SP: ${skillPts - points}`
+    );
+    return;
+  }
+
   if (cmd === "rpg") {
     await sendText(from,
       `*RPG STATUS @${getMentionName(sender)}* ⚔️🌌\n\n` +

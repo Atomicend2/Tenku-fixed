@@ -225,10 +225,11 @@ router.post("/otp/verify", (req, res) => {
     return;
   }
 
-  // Always use the plain phone number as the session user_id
+  // Use the actual DB record's id as the session user_id so we find the right record
+  // (the active record may have id = LID-based string or plain phone depending on history)
   const token = randomBytes(32).toString("hex");
   const sessionExpiry = now + 30 * 24 * 3600;
-  db.prepare("INSERT INTO web_sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(token, normalized, sessionExpiry);
+  db.prepare("INSERT INTO web_sessions (token, user_id, expires_at) VALUES (?, ?, ?)").run(token, user.id, sessionExpiry);
 
   const BOT_OWNER = (process.env["BOT_OWNER_LID"] || "2348144550593").replace(/\D/g, "");
   const isOwner = normalized === BOT_OWNER;
