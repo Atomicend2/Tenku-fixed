@@ -1,1 +1,55 @@
-import type { CommandContext } from \"./index.js\";\nimport { sendText } from \"../connection.js\";\nimport { getDb } from \"../db/database.js\";\nimport { getStaff, extractNumberFromJid, getMentionName } from \"../db/queries.js\";\n\nexport async function handleStaff(ctx: CommandContext): Promise<void> {\n  const { from, sender, args, command: cmd } = ctx;\n\n  if (cmd === \"addrole\") {\n    if (!ctx.isOwner) {\n      const staff = getStaff(ctx.sender);\n      if (!staff || ![\"mod\", \"guardian\", \"owner\"].includes(staff.role)) {\n        await sendText(from, \"❌ Only mods, guardians, and owner can manage roles.\");\n        return;\n      }\n    }\n\n    const targetPhone = args[0]?.replace(/\\D/g, \"\");\n    const role = args[1]?.toLowerCase();\n\n    if (!targetPhone || !role || ![\"mod\", \"guardian\"].includes(role)) {\n      await sendText(from, \"❌ Usage: .addrole [phone_number] [mod|guardian]\\nExample: .addrole 2348031234567 mod\");\n      return;\n    }\n\n    const db = getDb();\n    const existing = db.prepare(\"SELECT * FROM staff WHERE user_id = ?\").get(targetPhone) as any;\n\n    if (existing && existing.role === role) {\n      await sendText(from, `❌ User is already a ${role}.`);\n      return;\n    }\n\n    db.prepare(\"INSERT OR REPLACE INTO staff (user_id, role, added_by, added_at) VALUES (?, ?, ?, unixepoch())\").run(\n      targetPhone,\n      role,\n      extractNumberFromJid(ctx.sender)\n    );\n\n    await sendText(from, `✅ +${targetPhone} is now a ${role}.`);\n    return;\n  }\n\n  if (cmd === \"website\") {\n    const websiteUrl = process.env[\"WEBSITE_URL\"] || \"\";\n    if (!websiteUrl) {\n      await sendText(from, \"❌ Website URL not configured.\");\n      return;\n    }\n    await sendText(from, `🌐 *Tenku Website*\\n\\n${websiteUrl}`);\n    return;\n  }\n\n  // Placeholder for other staff commands\n  await sendText(from, `📝 Staff command handler for *.${cmd}* needs implementation.\");\n}\n"
+import type { CommandContext } from "./index.js";
+import { sendText } from "../connection.js";
+import { getDb } from "../db/database.js";
+import { getStaff, extractNumberFromJid, getMentionName } from "../db/queries.js";
+
+export async function handleStaff(ctx: CommandContext): Promise<void> {
+  const { from, sender, args, command: cmd } = ctx;
+
+  if (cmd === "addrole") {
+    if (!ctx.isOwner) {
+      const staff = getStaff(ctx.sender);
+      if (!staff || !["mod", "guardian", "owner"].includes(staff.role)) {
+        await sendText(from, "❌ Only mods, guardians, and owner can manage roles.");
+        return;
+      }
+    }
+
+    const targetPhone = args[0]?.replace(/\D/g, "");
+    const role = args[1]?.toLowerCase();
+
+    if (!targetPhone || !role || !["mod", "guardian"].includes(role)) {
+      await sendText(from, "❌ Usage: .addrole [phone_number] [mod|guardian]\nExample: .addrole 2348031234567 mod");
+      return;
+    }
+
+    const db = getDb();
+    const existing = db.prepare("SELECT * FROM staff WHERE user_id = ?").get(targetPhone) as any;
+
+    if (existing && existing.role === role) {
+      await sendText(from, `❌ User is already a ${role}.`);
+      return;
+    }
+
+    db.prepare("INSERT OR REPLACE INTO staff (user_id, role, added_by, added_at) VALUES (?, ?, ?, unixepoch())").run(
+      targetPhone,
+      role,
+      extractNumberFromJid(ctx.sender)
+    );
+
+    await sendText(from, `✅ +${targetPhone} is now a ${role}.`);
+    return;
+  }
+
+  if (cmd === "website") {
+    const websiteUrl = process.env["WEBSITE_URL"] || "";
+    if (!websiteUrl) {
+      await sendText(from, "❌ Website URL not configured.");
+      return;
+    }
+    await sendText(from, `🌐 *Tenku Website*\n\n${websiteUrl}`);
+    return;
+  }
+
+  await sendText(from, `📝 Staff command handler for *.${cmd}* needs implementation.`);
+}
