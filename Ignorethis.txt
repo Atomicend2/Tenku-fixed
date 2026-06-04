@@ -1,0 +1,40 @@
+Don't change anything else 
+.join not work says only bot owner and all owner cmds can be used by mods too
+Leaving and coming back to gc bot doesn't see if someone leaves and does come back and the welcome & leave
+C4 isn't working properly fix it that's the whole gameplay and stuff
+When user goes afk if use ">" to type before the message, then doesn't exit afk and the @user tag to tag users work in some places and doesn't in some so check this error and fix it
+In skill points web I don't see how to assign the points I earn what I want is how many points I have and a button to click like upgrade and downgrade for each skill so users can upgrade or remove the points and from web user can upload their pp and bg too and it'll work like on WhatsApp exactly and also display on web too and add frames only equipable from web
+Let me explain the main error so I don't think that WhatsApp uses l i d @ user because when I typed.reg on WhatsApp it showed me that I've registered use.p to view your profile when I now went to the web i put my phone number that is 234 81 44 55 05 93 that is the owner's number first issue is that the bot does not recognize its owner after that the other issues are the web and what is it called whatsApp truth aren't linked so when I go to you know on the admin page there's this place where you can see the players the recent players yeah so when I go there I see my self that is my name but phone number under that is showing is my lid which is 101014040526896 and then i also see myself another player my same name but with my phone number 234 8144 55 0593 so the issue is there is one me but in the in the system there are two of me that is a big error I don't know how we are going to fix this I need to fix this and also make sure the bank capacity doesn't increase by itself like the bank capacity if it's 50k and I have 60k I can't deposit more than 50k till I buy bank notes you understand?
+And also.bots is a command used by all it must check bots registered and status showing.
+ ┌─❖
+│「 🆃🅴🅽🅺🆄 」
+└┬❖ 「 𝗕𝗢𝗧𝗦 」
+   │✑  🔴 (shows bot name offline stats) 
+   │✑  🟢 (bot name online stats) 
+   └────────────┈ ⳹
+
+
+For each and every one bot
+
+And.mods should tag mods like @user
+Like
+┌─❖
+│「 🆃🅴🅽🅺🆄 」
+└┬❖ 「 👑 𝗠𝗼𝗱𝘀 👑 」
+   │✑  @⁨user 
+   ├────────────┈ ⳹
+   │ 「 🛡️ 𝗚𝘂𝗮𝗿𝗱𝗶𝗮𝗻𝘀 🛡️ 」
+   │✑  @⁨user
+   └────────────┈ ⳹
+
+> ⚠️ Unnecessary use of this command will lead to a *ban from the community.*
+
+
+For each and every one mod or guardian and the owner shows in this list
+
+We can upload cards, image and video cards it is saying error occurred 
+Check the whole logic and fix 
+
+But apart from apart from all these mentioned the most concerning issue is that the bot doesn't even know its owner and then the lid issues
+
+Tell what you fixed and why it'll work this time
